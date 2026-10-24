@@ -1,0 +1,22 @@
+{
+  "name": "frame",
+  "private": true,
+  "workspaces": [
+    "apps/web"
+  ],
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "scripts": {
+    "dev": "npm run dev -w @frame/web",
+    "build": "npm run build -w @frame/web",
+    "lint": "npm run lint -w @frame/web",
+    "typecheck": "npm run typecheck -w @frame/web",
+    "test": "npm run test -w @frame/web",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "devDependencies": {
+    "prettier": "^3.6.2"
+  }
+}

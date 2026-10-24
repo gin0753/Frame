@@ -1,0 +1,22 @@
+node_modules/
+.next/
+coverage/
+*.tsbuildinfo
+.env*
+!.env.example
+dist/
+tmp/
+
+# Internal execution history remains local; never delete it to clean Git.
+/docs/baselines/
+/docs/stage-*.md
+/docs/git-*.md
+
+# Public evidence: one maintained entry point and two representative visuals.
+/docs/evidence/**
+!/docs/evidence/README.md
+!/docs/evidence/screenshots/
+!/docs/evidence/screenshots/stage-1.1/
+!/docs/evidence/screenshots/stage-1.1/homepage/
+!/docs/evidence/screenshots/stage-1.1/homepage/393-homepage.png
+!/docs/evidence/screenshots/stage-1.1/homepage/1440-homepage.png

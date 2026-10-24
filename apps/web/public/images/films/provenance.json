@@ -1,0 +1,156 @@
+{
+  "retrievedOn": "2026-10-22",
+  "note": "CC BY under linked project policies. See docs/movie-assets.md for per-film attribution and license assumptions.",
+  "entries": [
+    {
+      "slug": "charge",
+      "creator": "Blender Foundation",
+      "sourcePage": "https://studio.blender.org/films/charge/",
+      "originalImage": "https://studio.blender.org/files/public/header/project/f6/76/f67601c6f69b2d7f65a5e5d97e73c4d7.png",
+      "licensePolicy": "https://studio.blender.org/remixing/",
+      "files": [
+        {
+          "file": "charge-backdrop.webp",
+          "width": 1920,
+          "height": 850,
+          "bytes": 147296,
+          "sha256": "7ad32bfcb9ffc045b50855b2629dec9c020a0997ba027dd5560543355e711a77",
+          "changes": "Resized to maximum 1920px width and WebP compressed."
+        },
+        {
+          "file": "charge-poster.webp",
+          "width": 600,
+          "height": 900,
+          "bytes": 70586,
+          "sha256": "8b5b63f6bf019744366cbc807365272b7d37684561c39584ca238cef8510a029",
+          "changes": "Resized and cropped from licensed still to 2:3; WebP compression. Not an official poster."
+        }
+      ]
+    },
+    {
+      "slug": "sintel",
+      "creator": "Blender Foundation",
+      "sourcePage": "https://studio.blender.org/films/sintel/",
+      "originalImage": "https://studio.blender.org/files/public/header/project/c0/91/c091f1c8d6aacd18e0285989b69587d3.png",
+      "licensePolicy": "https://studio.blender.org/remixing/",
+      "files": [
+        {
+          "file": "sintel-backdrop.webp",
+          "width": 1920,
+          "height": 818,
+          "bytes": 98670,
+          "sha256": "4c5fef7682197af7ecb1653f016e11412c79b6c3b3bd2ae163422f02a1b1399a",
+          "changes": "Resized to maximum 1920px width and WebP compressed."
+        },
+        {
+          "file": "sintel-poster.webp",
+          "width": 600,
+          "height": 900,
+          "bytes": 26380,
+          "sha256": "64e9cc341fc4ba804d9b4f04492e29170cfe606527c51603c547a09155e81544",
+          "changes": "Resized and cropped from licensed still to 2:3; WebP compression. Not an official poster."
+        }
+      ]
+    },
+    {
+      "slug": "spring",
+      "creator": "Blender Foundation",
+      "sourcePage": "https://studio.blender.org/films/spring/",
+      "originalImage": "https://studio.blender.org/files/public/header/project/e5/0f/e50f13c31a485f3a05d4983f1b4ab7ee.png",
+      "licensePolicy": "https://studio.blender.org/remixing/",
+      "files": [
+        {
+          "file": "spring-backdrop.webp",
+          "width": 1920,
+          "height": 650,
+          "bytes": 56428,
+          "sha256": "6c24c21986e5553f2c089da4b8b61fcb62b9e30ae931ba824cd2762a2e42073a",
+          "changes": "Resized to maximum 1920px width and WebP compressed."
+        },
+        {
+          "file": "spring-poster.webp",
+          "width": 600,
+          "height": 900,
+          "bytes": 36748,
+          "sha256": "9fa7ae9c2a18bd97fdc58f344e15fc4e44666603504bb932e720ed20abb6b311",
+          "changes": "Resized and cropped from licensed still to 2:3; WebP compression. Not an official poster."
+        }
+      ]
+    },
+    {
+      "slug": "tears-of-steel",
+      "creator": "Blender Foundation",
+      "sourcePage": "https://studio.blender.org/films/tears-of-steel/",
+      "originalImage": "https://studio.blender.org/files/public/header/project/ff/67/ff6786ca1342e226ffb64ddbf6a31e52.png",
+      "licensePolicy": "https://studio.blender.org/remixing/",
+      "files": [
+        {
+          "file": "tears-of-steel-backdrop.webp",
+          "width": 1920,
+          "height": 650,
+          "bytes": 195128,
+          "sha256": "eb947e0820d2f4282a27293309ad795a9e9c57e15ab5b1c242ab9efca07fc939",
+          "changes": "Resized to maximum 1920px width and WebP compressed."
+        },
+        {
+          "file": "tears-of-steel-poster.webp",
+          "width": 600,
+          "height": 900,
+          "bytes": 59902,
+          "sha256": "649c322cc56d121133ebe61fa3afe9577b484230e633a2a8e4c17ce9cb4b12e9",
+          "changes": "Resized and cropped from licensed still to 2:3; WebP compression. Not an official poster."
+        }
+      ]
+    },
+    {
+      "slug": "cosmos-laundromat",
+      "creator": "Blender Foundation",
+      "sourcePage": "https://studio.blender.org/films/cosmos-laundromat/",
+      "originalImage": "https://studio.blender.org/files/public/header/project/b4/02/b4026f8bc93f6dce9c66ceb5d142063b.jpg",
+      "licensePolicy": "https://studio.blender.org/remixing/",
+      "files": [
+        {
+          "file": "cosmos-laundromat-backdrop.webp",
+          "width": 1592,
+          "height": 1040,
+          "bytes": 177038,
+          "sha256": "c4e7669dc7d48d08294feba3987b6d3968b6e610d047ead0dd9ac94590a42c6c",
+          "changes": "Resized to maximum 1920px width and WebP compressed."
+        },
+        {
+          "file": "cosmos-laundromat-poster.webp",
+          "width": 600,
+          "height": 900,
+          "bytes": 82998,
+          "sha256": "d3e4444f0157399a880b9e135d9dd3c2d437fb0f82f2d70ff9d46249464b5add",
+          "changes": "Resized and cropped from licensed still to 2:3; WebP compression. Not an official poster."
+        }
+      ]
+    },
+    {
+      "slug": "sprite-fright",
+      "creator": "Blender Foundation",
+      "sourcePage": "https://studio.blender.org/films/sprite-fright/",
+      "originalImage": "https://studio.blender.org/files/public/header/project/ff/3d/ff3d8a8048e767cbc92d6489404924b2.jpg",
+      "licensePolicy": "https://studio.blender.org/remixing/",
+      "files": [
+        {
+          "file": "sprite-fright-backdrop.webp",
+          "width": 1920,
+          "height": 850,
+          "bytes": 186828,
+          "sha256": "17b97f0212be23e61217a05727c20be56d6daed0fe2a0a928ea3ae6b3ba54c0d",
+          "changes": "Resized to maximum 1920px width and WebP compressed."
+        },
+        {
+          "file": "sprite-fright-poster.webp",
+          "width": 600,
+          "height": 900,
+          "bytes": 75080,
+          "sha256": "2a0dd4a7419d2197a3db7a9c174bd6c6271699e47e624a1e88a53b01d81d83b1",
+          "changes": "Resized and cropped from licensed still to 2:3; WebP compression. Not an official poster."
+        }
+      ]
+    }
+  ]
+}

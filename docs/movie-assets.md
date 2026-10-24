@@ -1,0 +1,30 @@
+# Movie assets and fixture provenance
+
+Retrieved 22 October 2026. All 12 WebP assets are bundled locally in `apps/web/public/images/films`; no remote image service or API is needed to render the page. `provenance.json` in that directory records original image URLs, dimensions, byte counts and SHA-256 hashes. The entire collection totals 1,213,082 bytes before Next.js responsive image optimization.
+
+## Sources and attribution
+
+All film imagery is © Blender Foundation. FRAME is independent and does not claim endorsement. Reuse follows the [Blender Studio remixing policy](https://studio.blender.org/remixing/) and the project-specific policies below. No studio or film logo files were downloaded.
+
+| Film                                  | Official source                                             | License evidence / policy                                                                    | Metadata evidence                                                                                                                                            |
+| ------------------------------------- | ----------------------------------------------------------- | -------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Charge (2022)                         | [Film](https://studio.blender.org/films/charge/)            | [Studio CC BY policy](https://studio.blender.org/remixing/)                                  | [15 Dec 2022 premiere](https://studio.blender.org/blog/charge-premiere/); official film runs 4m 23s                                                          |
+| Sintel (2010)                         | [Durian project](https://durian.blender.org/)               | [CC BY 3.0 and required attribution](https://durian.blender.org/sharing/)                    | [Studio film page](https://studio.blender.org/films/sintel/) and [festival history](https://durian.blender.org/press-and-events/)                            |
+| Spring (2019)                         | [Film](https://studio.blender.org/films/spring/)            | [CC BY 4.0](https://studio.blender.org/projects/spring/pages/about/)                         | Same project page specifies 7m 44s; [2019 release](https://www.blender.org/press/blender-top-16-highlights-of-2019/)                                         |
+| Tears of Steel (2012)                 | [Mango project](https://mango.blender.org/)                 | [CC BY 3.0](https://mango.blender.org/sharing/)                                              | [Studio film page](https://studio.blender.org/films/tears-of-steel/)                                                                                         |
+| Cosmos Laundromat: First Cycle (2015) | [Film](https://studio.blender.org/films/cosmos-laundromat/) | [Studio CC BY policy](https://studio.blender.org/remixing/)                                  | [Release](https://www.blender.org/press/cosmos-laundromat-released/) and [SIGGRAPH Jury Prize](https://www.blender.org/media-exposure/siggraph-2016-report/) |
+| Sprite Fright (2021)                  | [Film](https://studio.blender.org/films/sprite-fright/)     | [Project attribution policy](https://studio.blender.org/projects/sprite-fright/pages/about/) | [Producer interview: Annecy selection](https://see-nl.com/artikel/20220613-annecy-2022-sprite-fright)                                                        |
+
+The footer shows copyright attribution and links to each original project and its policy. Sintel is credited to Blender Foundation with a link to the Durian project; Tears of Steel links to Mango. The project pages are the license evidence, rather than a blanket assertion that every film uses the same license version. The Sprite Fright about page currently states Attribution 1.0; the app links that policy directly without silently substituting a different version. Charge and Cosmos header stills are treated as project content covered by the Studio's general CC BY reuse policy; no per-header exception was shown. This is the explicit licensing assumption for those files and should be rechecked before commercial publication.
+
+## Adaptations
+
+Each backdrop comes from the public hero image on its official project page. The source URL is recorded exactly in `provenance.json`. Backdrops are resized to at most 1920px and compressed to WebP at quality 85. Portrait assets are 600×900 attention crops of those same stills. They are **poster-format presentation artwork, not official theatrical posters**. Titles are HTML interface typography; source logos and trademarks are excluded. CSS gradients improve legibility. Changes are disclosed in the footer.
+
+No copyrighted commercial movie imagery was scraped. Only the identified, openly licensed project images were downloaded from their publisher. No film footage, soundtrack, or trailer is bundled or embedded. A trailer action is omitted because a separate trailer URL was not verified.
+
+## Fixture policy
+
+Synopsis copy is a concise editorial paraphrase, and genres are editorial classifications informed by the films, not a copied provider taxonomy. Only Charge and Spring have runtime values; unknown runtimes remain `null`. No scores, invented credits, popularity counts, release certifications or ratings are shown. The acclaim rail contains only the three fixtures with a linked recognition source; a selection is never described as an award win.
+
+Trending and Popular are fixed editorial preview selections, labelled as such, not a claim of current audience activity. TMDB IDs and TMDB poster/backdrop paths have not been verified and are deliberately absent. Local asset paths are verified instead. A future NestJS adapter can map provider IDs and image URLs into the existing presentation model without changing cards.
