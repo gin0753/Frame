@@ -1,31 +1,28 @@
 {
   "name": "frame",
   "private": true,
-  "workspaces": [
-    "apps/web",
-    "apps/api"
-  ],
   "engines": {
     "node": ">=22.13.0"
   },
   "scripts": {
-    "dev": "npm run dev -w @frame/web",
-    "build": "npm run build -w @frame/web",
-    "lint": "npm run lint -w @frame/web",
-    "typecheck": "npm run typecheck -w @frame/web",
-    "test": "npm run test -w @frame/web",
+    "dev": "pnpm --filter @frame/web run dev",
+    "build": "pnpm --filter @frame/web run build",
+    "lint": "pnpm --filter @frame/web run lint",
+    "typecheck": "pnpm --filter @frame/web run typecheck",
+    "test": "pnpm --filter @frame/web run test",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "api:dev": "npm run dev -w @frame/api",
-    "api:build": "npm run build -w @frame/api",
-    "api:start": "npm run start -w @frame/api",
-    "api:test": "npm run test -w @frame/api",
-    "api:typecheck": "npm run typecheck -w @frame/api",
-    "api:lint": "npm run lint -w @frame/api",
-    "test:transport": "npm run api:build && node --test tests/transport/transport.test.cjs"
+    "api:dev": "pnpm --filter @frame/api run dev",
+    "api:build": "pnpm --filter @frame/api run build",
+    "api:start": "pnpm --filter @frame/api run start",
+    "api:test": "pnpm --filter @frame/api run test",
+    "api:typecheck": "pnpm --filter @frame/api run typecheck",
+    "api:lint": "pnpm --filter @frame/api run lint",
+    "test:transport": "pnpm run api:build && node --test tests/transport/transport.test.cjs"
   },
   "devDependencies": {
     "@playwright/test": "^1.64.1",
     "prettier": "^3.6.2"
-  }
+  },
+  "packageManager": "pnpm@10.34.9"
 }

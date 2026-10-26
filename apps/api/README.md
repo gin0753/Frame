@@ -5,12 +5,12 @@ Stage 1.2 NestJS Express skeleton. `src/main.ts` creates the application and boo
 From the repository root:
 
 ```sh
-npm run api:dev
-npm run api:build
-npm run api:start
-npm run api:test
-npm run api:typecheck
-npm run api:lint
+pnpm run api:dev
+pnpm run api:build
+pnpm run api:start
+pnpm run api:test
+pnpm run api:typecheck
+pnpm run api:lint
 ```
 
 Default listener: `127.0.0.1:3001`; web remains `127.0.0.1:3000`. Environment is inherited from the launching shell; API `.env.example` is documentation, not an automatically loaded file. Set `HOST`, `PORT`, and `NODE_ENV` in the shell when needed. `PORT` must be an integer 1–65535; `HOST` must be an IP literal or localhost; `NODE_ENV` must be development, test or production. Production also defaults to loopback; an external interface requires explicit operator configuration.

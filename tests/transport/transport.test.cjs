@@ -1,5 +1,6 @@
 const assert = require('node:assert/strict');
 const { test } = require('node:test');
+const { createRequire } = require('node:module');
 const { fork, spawn } = require('node:child_process');
 const { once } = require('node:events');
 const fs = require('node:fs/promises');
@@ -7,6 +8,8 @@ const path = require('node:path');
 const net = require('node:net');
 const { chromium, expect } = require('@playwright/test');
 const root = path.resolve(__dirname, '../..');
+const webRequire = createRequire(path.join(root, 'apps/web/package.json'));
+const nextCli = webRequire.resolve('next/dist/bin/next');
 const children = new Set();
 const output = [];
 async function port() {
@@ -123,7 +126,7 @@ test(
         FRAME_API_ORIGIN: apiOrigin,
       };
       web = child(
-        path.join(root, 'node_modules/next/dist/bin/next'),
+        nextCli,
         [
           'dev',
           'apps/web',
@@ -291,18 +294,14 @@ test(
         true,
       );
       await ready(apiOrigin + '/api/v1/health', api);
-      const build = child(
-        path.join(root, 'node_modules/next/dist/bin/next'),
-        ['build', 'apps/web'],
-        env,
-      );
+      const build = child(nextCli, ['build', 'apps/web'], env);
       assert.equal(
         (await once(build, 'exit'))[0],
         0,
         output.slice(-12).join(''),
       );
       web = child(
-        path.join(root, 'node_modules/next/dist/bin/next'),
+        nextCli,
         [
           'start',
           'apps/web',
@@ -343,7 +342,7 @@ test(
       assert(!(await (await fetch(webOrigin)).text()).includes(apiOrigin));
       await stop(web);
       web = child(
-        path.join(root, 'node_modules/next/dist/bin/next'),
+        nextCli,
         [
           'dev',
           'apps/web',

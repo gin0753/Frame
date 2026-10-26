@@ -1,5 +1,9 @@
 const { createApp } = require('../../apps/api/dist/main');
-const { Controller, Get, Module } = require('@nestjs/common');
+const { createRequire } = require('node:module');
+const apiRequire = createRequire(
+  require.resolve('../../apps/api/package.json'),
+);
+const { Controller, Get, Module } = apiRequire('@nestjs/common');
 class Failure {
   fail() {
     throw new Error('PRIVATE_SECRET');
