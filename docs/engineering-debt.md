@@ -1,6 +1,6 @@
 # Engineering debt and integration gates
 
-Updated 24 October 2026. This is the maintained current-status companion to the frozen product, architecture, API and roadmap documents. Conditional progression is not performance certification or a release waiver.
+Updated 26 October 2026. This is the maintained current-status companion to the frozen product, architecture, API and roadmap documents. Conditional progression is not performance certification or a release waiver.
 
 ## Open quality risks
 
@@ -13,7 +13,7 @@ The approved Homepage, six fixtures, attribution, reduced motion, Radix focus be
 
 ## Integration gates
 
-- Repository: only web is initialized; add API/contracts workspaces when implemented. Nest, database, auth and TMDB are not present.
+- Repository: web and Nest health API are initialized. Contracts, database, auth and TMDB remain deferred.
 - Real API transport: verify successful direct and same-origin health requests, preserved prefix/query/method/body, errors/timeouts, Host/protocol/address and spoofed forwarded headers. Use narrow proxy trust; a failed upstream connection is not end-to-end success.
 - Contracts/data: implement the frozen authoritative runtime-schema workflow and DTO-to-presentation mapping before replacing fixtures. Preserve verified provider identity and destination-aware navigation.
 - Sessions/cache: verify selective server cookie forwarding, session/CSRF behavior, private no-store exclusions, redirects and Set-Cookie handling with a real API.
@@ -24,3 +24,34 @@ See [ADR-001](decisions/adr-001-repository-and-transport.md) and the [frozen API
 ## Evidence retention
 
 Historical failures and collector corrections remain in unchanged local evidence and verified TAR archives. [Evidence access](evidence/README.md) describes retrieval. Independent backup and off-machine retrieval are **NOT PERFORMED, RISK ACCEPTED** for initial-commit progression. Same-disk archives are not disaster-resistant backups.
+
+## Stage 1.2 verification limits
+
+- Development browser/rewrite and Next server-only health transport use real Nest and Next processes. The test-only probe is removed before production builds. Production server-side transport remains NOT RUN. No public diagnostic endpoint is retained.
+- Windows child-process SIGINT/SIGTERM tests exercise registered listeners and verify listener release. Real POSIX signal delivery is NOT RUN on this Windows host.
+- Dependency review: see the Stage 1.2.1 security assessment below. The vulnerable Multer dependency remains installed; no ineffective override is retained.
+- Chromium geometry/reduced-motion smoke and existing component tests do not close performance, visual review, touch/drag, cross-browser, device or accessibility debt above. No new performance acceptance measurement was made.
+- Deployment ingress trust/sanitization and cookie/CSRF behavior remain unverified. Local Next proxy errors are generic HTTP 500 plain text; Nest errors are sanitized JSON. No Stage 1.3 work is authorized by these checks.
+
+Stage 1.2 local acceptance evidence (26 October 2026): clean root `npm ci --ignore-scripts` succeeded; web 52/52 tests, API 13/13 tests and transport/lifecycle 3/3 tests passed. Direct health, development Chromium rewrite and Next server fetch returned 200 with the exact health JSON; production Chromium rewrite passed, and disabled development rewrites returned 404. Real refusal, stalled upstream, non-JSON upstream, API 404/500 sanitization and spoofed-forwarded-header checks passed. Chromium covered all seven baseline widths for page overflow, mobile menu Escape/focus restoration, genre disclosure/filter/reset, Hero destination, carousel next/previous availability and reduced-motion content visibility. These functional checks do not reclassify any existing performance or device debt. API and web production builds, lint, strict typechecks and repository formatting checks passed. Production Next server consumption and actual POSIX signal delivery remain NOT RUN.
+
+## Stage 1.2.1 security assessment (26 October 2026)
+
+Online root-lockfile audit reports **two High package entries, one underlying advisory**:
+
+| Package                    | Installed / affected                             | Finding and exposure                                                                                                                                                                                                                                                      |
+| -------------------------- | ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `multer`                   | 2.4.0 / >=2.0.0 <2.5.0                           | [GHSA-q7qp-rjg7-q26m](https://github.com/advisories/GHSA-q7qp-rjg7-q26m), CVE-2026-113872, CVSS 7.5. An asynchronous fileFilter callback after request teardown can crash the Node process. Fixed in 2.5.0. This is a runtime dependency, not a development-only finding. |
+| `@nestjs/platform-express` | 11.2.8 / audit range 10.4.18–10.4.22 or >=11.1.2 | Inherited High entry through the pinned vulnerable Multer dependency, with no separate advisory/CVE in this audit.                                                                                                                                                        |
+
+Actual chain: root workspace → `@frame/api` → `@nestjs/platform-express@11.2.8` → `multer@2.4.0`. Nest core also has an optional peer edge to the adapter. The installed copy resolves within the adapter's own node_modules directory.
+
+Exposure review: production AppModule imports only HealthModule; its only controller is GET health. No MulterModule, upload interceptor, fileFilter, multipart middleware or dynamic module loading is registered. Express adapter bootstrap registers JSON/urlencoded parsers, not Multer. Multer execution is installed by Nest upload interceptors only when those interceptors are instantiated. Source inspection and the real HTTP multipart rejection/liveness regression support the conclusion that the advisory's async upload-filter crash path is not reachable in this skeleton. Loopback defaults further restrict direct access, but loopback and absence of an upload route do not make the dependency intrinsically safe.
+
+Remediation evaluation: 11.2.8 is the newest published Nest 11 patch and still pins Multer 2.4.0. Multer 2.5.0 is a same-major security fix; Nest 12.2.0 would require an unreviewed major migration and was excluded. Targeted npm install/update and version/workspace-scoped root overrides retained 2.4.0 under npm 11.13.0. This matches an [open npm workspace-override issue](https://github.com/npm/cli/issues/9659); it is not proof of a working remediation. Trial overrides were removed. No audit suppression, forced framework upgrade or manual dependency-resolution edit is retained.
+
+**Temporary local-baseline condition:** retain the finding explicitly while there is no reachable upload parsing. Reassess on adapter/npm updates and before adding any multipart middleware or upload interceptor, exposing the API externally, or deploying. The preferred remedy is a supported adapter release with patched Multer; a narrow override requires verified installation, Nest multipart compatibility and advisory regression tests before retention. This assessment does not authorize production deployment or silently accept future upload exposure.
+
+Production Next server consumption and actual POSIX signal delivery remain NOT RUN. Cross-browser/device and accessibility limitations remain open. Input responsiveness remains FAIL, desktop LCP OPEN, and N1 Mobile Menu Entrance DEFERRED. Stage 1.2 remains conditionally accepted; this review does not enter Stage 1.3.
+
+Review validation executed during Stage 1.2.1: `npm test` 52/52, `npm run api:test` 14/14 (including real multipart rejection and absent diagnostic routes), and `npm run test:transport` 3/3 passed. Web/API lint, strict typechecks and production builds passed, as did formatting and `git diff --check`. The root manifests match the lockfile and `npm ci --dry-run --ignore-scripts --offline` passed; a full clean install was not repeated during this review. Existing component mocks remain unit-test limitations; transport success uses real Nest/Next processes and Chromium, without fetch/network interception. The probe is absent after testing and test listeners were released. No new P0/P1 issue was identified. Local commit preparation remains conditional on the security and verification limits above; no files were staged and no commit was created.

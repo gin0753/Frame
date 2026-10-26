@@ -1,0 +1,7 @@
+import { getApiHealth } from '@/lib/server/health';
+export const dynamic = 'force-dynamic';
+export async function GET() {
+  if (process.env.NODE_ENV === 'production') return new Response(null, {status:404});
+  try { return Response.json(await getApiHealth(), {headers:{'Cache-Control':'no-store'}}); }
+  catch { return Response.json({message:'API unavailable'}, {status:502}); }
+}

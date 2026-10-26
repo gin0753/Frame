@@ -62,3 +62,17 @@ This approach adds no dependency or Homepage hydration cost. Local API absence p
 ## Sources inspected
 
 Installed version-specific Next documentation: `node_modules/next/dist/docs/01-app/03-api-reference/05-config/01-next-config-js/rewrites.md` and `01-app/02-guides/environment-variables.md`. Installed implementation: `dist/server/lib/router-utils/proxy-request.js`, `dist/server/base-server.js`, and `dist/build/webpack/plugins/build-manifest-plugin-utils.js`. These describe this installation; deployment behavior still requires its own proof. No frozen document has been edited.
+
+## Stage 1.2 implementation (26 October 2026)
+
+`apps/api` is now a root npm workspace using NestJS 11 with the Express adapter. The root lockfile remains authoritative. Only health, runtime validation, sanitized errors, HTTP headers and bounded lifecycle shutdown are implemented. The four frozen design documents remain unchanged.
+
+The Stage 1.1 opt-in rewrite remains the sole browser proxy. Next's installed `experimental.proxyTimeout` bounds upstream inactivity at three seconds. Its failure response is generic HTTP 500 plain text; successful Nest responses and Nest error responses are JSON. Disabled rewrites fall through to Next's 404 page. The local proxy remains unsuitable as a hardened production ingress.
+
+The server-only `src/lib/server/health.ts` consumer validates the fixed origin, uses `/api/v1/health` once, sends no cookies, disables caching and redirects, and bounds fetch/body parsing at three seconds. Invalid HTTP status, non-JSON content and invalid health payloads fail with a generic error. `FRAME_API_ORIGIN`, if supplied, is also validated while loading Next configuration, even when rewrites are disabled. The rewrite retains its stricter loopback requirement. Internal deployment origins may be HTTP(S), without credentials, path, query or fragment.
+
+On this Node 24 installation, Next's legacy compiled-config loader failed to resolve relative helpers. Web dev/build/start commands therefore select the installed native TypeScript config loader and use explicit `.ts` configuration imports. Older supported Node 22 installations may need `NODE_OPTIONS=--experimental-transform-types`, as described by the installed Next TypeScript guide.
+
+`npm run test:transport` starts real test-only Nest and Next processes and Chromium, with readiness polling and cleanup. A temporary server-only Next route exercises the direct server fetch; it always denies production and is removed before the production build. Failure/observation controllers exist only in the test fixture. Neither is shipped as an application diagnostic endpoint. The harness must run exclusively against the web build directory; do not run it alongside another Next dev/build process. Browser installation: `npx playwright install chromium`, or set `FRAME_CHROMIUM_EXECUTABLE` to an existing compatible Chromium binary.
+
+Verified development paths are browser → same-origin rewrite → Nest, and Next server execution → validated origin → Nest. Production browser transport is tested separately; production server-side consumption is not claimed because the temporary probe is excluded. Deployment ingress and session behavior remain unverified.

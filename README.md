@@ -1,6 +1,6 @@
 # FRAME
 
-A cinematic movie discovery interface built with Next.js, React and TypeScript. The Homepage uses six licensed Blender films, responsive movie rails and genre filtering. It runs entirely on local fixtures; no backend, authentication, live rankings or TMDB integration is implemented.
+A cinematic movie discovery interface built with Next.js, React and TypeScript. The Homepage uses six licensed Blender films, responsive movie rails and genre filtering. The Homepage runs entirely on local fixtures. A NestJS health API is available; authentication, live rankings and TMDB integration remain unimplemented.
 
 ## Run locally
 
@@ -23,7 +23,7 @@ npm run format:check
 
 ## Architecture and scope
 
-Only `apps/web` is an active npm workspace. `apps/api` and `packages/contracts` contain reservation READMEs; initialize them only when their implementation is needed. The web app uses App Router server rendering, small client regions for Radix navigation, Embla rails and genre filtering, and a provider-independent movie presentation model. No task orchestrator or global state library is needed.
+`apps/web` and `apps/api` are active npm workspaces. `packages/contracts` remains reserved for Stage 1.4. The web app uses App Router server rendering, small client regions for Radix navigation, Embla rails and genre filtering, and a provider-independent movie presentation model. No task orchestrator or global state library is needed.
 
 - [Product specification](docs/product-specification.md)
 - [Architecture](docs/architecture.md)
@@ -38,7 +38,7 @@ The four architecture-baseline documents are frozen design decisions. Their date
 
 ## Local API routing
 
-The Homepage needs no environment file or API. Once a real local API exists, copy `apps/web/.env.example` to `apps/web/.env.local` and explicitly enable `FRAME_LOCAL_API_PROXY=true`. The Next rewrite preserves `/api/v1/*` when forwarding to the trusted loopback `FRAME_API_ORIGIN`. Restart development or rebuild a production preview after configuration changes. There is currently no API process to start, and enabled proxy requests fail without an upstream.
+The Homepage needs no environment file or API. Copy `apps/web/.env.example` to `apps/web/.env.local` and explicitly enable `FRAME_LOCAL_API_PROXY=true`. The Next rewrite preserves `/api/v1/*` when forwarding to the trusted loopback `FRAME_API_ORIGIN`. Restart development or rebuild a production preview after configuration changes. Start the API in another terminal with `npm run api:dev`. It defaults to `127.0.0.1:3001`; web defaults to port 3000.
 
 `FRAME_API_ORIGIN` is server-only; never expose it through `NEXT_PUBLIC_*` or `next.config.env`. Future deployment ingress owns same-origin API routing; leave the local proxy disabled in deployment builds. Actual forwarding, proxy trust, cookies and cache isolation require integration verification; see the ADR and quality gates.
 
@@ -51,3 +51,11 @@ Preserve the cinematic Homepage, responsive crops, 48px action controls, visible
 ## Documentation policy
 
 Keep public documentation lean: product, design, architecture, contracts, essential ADRs, licensing and concise operational guidance. Maintain current risks in one place. Internal execution reports, raw traces, collector scripts, large JSON bundles and duplicate screenshots remain local archival material rather than public documentation. Do not rewrite historical results or delete evidence to clean the repository. The evidence entry point explains local restoration and its accepted single-disk risk.
+
+## API verification
+
+See [API operations](apps/api/README.md) for runtime variables, security boundaries, shutdown and the health contract. API scripts: `api:dev`, `api:build`, `api:start`, `api:test`, `api:typecheck`, `api:lint`. Existing web scripts retain their purposes.
+
+`npm run test:transport` runs real HTTP, Chromium through the Next rewrite, a temporary Next server-only consumer, failure cases and isolated shutdown checks. Install Chromium with `npx playwright install chromium` or set `FRAME_CHROMIUM_EXECUTABLE`. Do not run another Next process during this test. The temporary consumer is removed before the production preview build. Production server-side transport and POSIX signal delivery require separate verification; see [ADR-001](docs/decisions/adr-001-repository-and-transport.md).
+
+Stage 1.3 will add persistence separately. No database health, schemas, migrations, accounts or movie API are present.
