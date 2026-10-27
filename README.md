@@ -58,7 +58,7 @@ See [API operations](apps/api/README.md) for runtime variables, security boundar
 
 `pnpm run test:transport` runs real HTTP, Chromium through the Next rewrite, a temporary Next server-only consumer, failure cases and isolated shutdown checks. Install Chromium with `pnpm exec playwright install chromium` or set `FRAME_CHROMIUM_EXECUTABLE`. Do not run another Next process during this test. The temporary consumer is removed before the production preview build. Production server-side transport and POSIX signal delivery require separate verification; see [ADR-001](docs/decisions/adr-001-repository-and-transport.md).
 
-Stage 1.3 will add persistence separately. No database health, schemas, migrations, accounts or movie API are present.
+Stage 1.3 provides local PostgreSQL, Prisma migrations and a DI-managed database client. `/api/v1/health` remains process liveness; `/api/v1/ready` checks real database connectivity. See [API operations](apps/api/README.md#local-postgresql-and-migrations) for `db:init`, `db:up`, `db:migrate`, `db:test` and `db:down`. The Homepage still uses fixtures; accounts and movie APIs remain unimplemented.
 
 ## Package manager and delivery tooling
 

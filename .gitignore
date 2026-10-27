@@ -5,6 +5,7 @@ coverage/
 .env*
 !.env.example
 dist/
+apps/api/src/generated/
 tmp/
 
 # Internal execution history remains local; never delete it to clean Git.

@@ -1,0 +1,34 @@
+name: frame-local
+services:
+  database:
+    image: postgres:17.11-alpine
+    environment:
+      POSTGRES_USER: frame_dev
+      POSTGRES_DB: frame_dev
+      POSTGRES_PASSWORD: ${FRAME_DEV_DB_PASSWORD:?Run pnpm db:init first}
+    ports:
+      - '127.0.0.1:${FRAME_DEV_DB_PORT:-5433}:5432'
+    volumes:
+      - database:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -h 127.0.0.1 -U frame_dev -d frame_dev']
+      interval: 2s
+      timeout: 2s
+      retries: 30
+  database-test:
+    image: postgres:17.11-alpine
+    environment:
+      POSTGRES_USER: frame_test
+      POSTGRES_DB: frame_test
+      POSTGRES_PASSWORD: ${FRAME_TEST_DB_PASSWORD:?Run pnpm db:init first}
+    ports:
+      - '127.0.0.1:${FRAME_TEST_DB_PORT:-5434}:5432'
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -h 127.0.0.1 -U frame_test -d frame_test']
+      interval: 2s
+      timeout: 2s
+      retries: 30
+volumes:
+  database:

@@ -3,24 +3,31 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "tsx watch src/main.ts",
-    "build": "tsc -p tsconfig.build.json",
+    "dev": "pnpm run prisma:generate && tsx watch src/main.ts",
+    "build": "pnpm run prisma:generate && tsc -p tsconfig.build.json",
     "start": "node dist/main.js",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "pnpm run prisma:generate && tsc --noEmit",
     "lint": "eslint . --max-warnings 0",
-    "test": "pnpm run build && node --test test/*.test.cjs"
+    "test": "pnpm run build && node --test test/*.test.cjs",
+    "prisma:validate": "prisma validate",
+    "prisma:generate": "prisma generate"
   },
   "dependencies": {
     "@nestjs/common": "^11.1.0",
     "@nestjs/core": "^11.1.0",
     "@nestjs/platform-express": "^11.1.0",
+    "@prisma/adapter-pg": "7.10.1",
+    "@prisma/client": "7.10.1",
+    "pg": "8.23.1",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.2"
   },
   "devDependencies": {
     "@types/express": "^5.0.0",
     "@types/node": "^24.19.2",
+    "@types/pg": "8.20.0",
     "eslint": "^10.13.0",
+    "prisma": "7.10.1",
     "tsx": "^4.20.0",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.0.0"

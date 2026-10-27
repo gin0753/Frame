@@ -18,7 +18,17 @@
     "api:test": "pnpm --filter @frame/api run test",
     "api:typecheck": "pnpm --filter @frame/api run typecheck",
     "api:lint": "pnpm --filter @frame/api run lint",
-    "test:transport": "pnpm run api:build && node --test tests/transport/transport.test.cjs"
+    "test:transport": "pnpm run api:build && node --test tests/transport/transport.test.cjs",
+    "db:init": "node apps/api/scripts/database.cjs init",
+    "db:up": "node apps/api/scripts/database.cjs up",
+    "db:down": "node apps/api/scripts/database.cjs down",
+    "db:status": "node apps/api/scripts/database.cjs status",
+    "db:migrate": "node apps/api/scripts/database.cjs migrate",
+    "db:migrate:status": "node apps/api/scripts/database.cjs status-migrations",
+    "db:diff": "node apps/api/scripts/database.cjs diff",
+    "db:test": "pnpm run api:build && node apps/api/scripts/database.cjs test",
+    "prisma:validate": "pnpm --filter @frame/api run prisma:validate",
+    "prisma:generate": "pnpm --filter @frame/api run prisma:generate"
   },
   "devDependencies": {
     "@playwright/test": "^1.64.1",
