@@ -7,6 +7,7 @@ import {
 import type { Response } from 'express';
 import { STATUS_CODES } from 'node:http';
 import { randomUUID } from 'node:crypto';
+import { apiErrorSchema } from '@frame/contracts';
 export function safeError(error: unknown) {
   const status = error instanceof HttpException ? error.getStatus() : 500;
   return { statusCode: status, message: STATUS_CODES[status] ?? 'Error' };
@@ -31,12 +32,14 @@ export class SafeExceptionFilter implements ExceptionFilter {
       .set('Cache-Control', 'no-store')
       .set('X-Request-Id', requestId)
       .status(body.statusCode)
-      .json({
-        error: {
-          code: errorCodes[body.statusCode] ?? 'HTTP_ERROR',
-          message: body.message,
-          requestId,
-        },
-      });
+      .json(
+        apiErrorSchema.parse({
+          error: {
+            code: errorCodes[body.statusCode] ?? 'HTTP_ERROR',
+            message: body.message,
+            requestId,
+          },
+        }),
+      );
   }
 }

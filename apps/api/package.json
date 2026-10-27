@@ -3,10 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "pnpm run prisma:generate && tsx watch src/main.ts",
-    "build": "pnpm run prisma:generate && tsc -p tsconfig.build.json",
+    "dev": "pnpm --filter @frame/contracts run build && pnpm run prisma:generate && tsx watch src/main.ts",
+    "build": "pnpm --filter @frame/contracts run build && pnpm run prisma:generate && tsc -p tsconfig.build.json",
     "start": "node dist/main.js",
-    "typecheck": "pnpm run prisma:generate && tsc --noEmit",
+    "typecheck": "pnpm --filter @frame/contracts run build && pnpm run prisma:generate && tsc --noEmit",
     "lint": "eslint . --max-warnings 0",
     "test": "pnpm run build && node --test test/*.test.cjs",
     "prisma:validate": "prisma validate",
@@ -20,7 +20,9 @@
     "@prisma/client": "7.10.1",
     "pg": "8.23.1",
     "reflect-metadata": "^0.2.2",
-    "rxjs": "^7.8.2"
+    "rxjs": "^7.8.2",
+    "@frame/contracts": "workspace:*",
+    "zod": "4.6.7"
   },
   "devDependencies": {
     "@types/express": "^5.0.0",

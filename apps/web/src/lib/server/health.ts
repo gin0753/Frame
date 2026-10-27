@@ -1,4 +1,5 @@
 import 'server-only';
+import { healthResponseSchema } from '@frame/contracts';
 import { apiOrigin } from '../../../config/api-origin';
 export async function getApiHealth() {
   const origin = apiOrigin(process.env.FRAME_API_ORIGIN);
@@ -16,16 +17,7 @@ export async function getApiHealth() {
     )
       throw new Error();
     const body: unknown = await response.json();
-    if (
-      !body ||
-      typeof body !== 'object' ||
-      !('status' in body) ||
-      !('service' in body) ||
-      body.status !== 'ok' ||
-      body.service !== 'frame-api'
-    )
-      throw new Error();
-    return { status: body.status, service: body.service };
+    return healthResponseSchema.parse(body);
   } catch {
     throw new Error('FRAME API unavailable or invalid response.');
   }

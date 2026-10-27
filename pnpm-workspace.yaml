@@ -1,6 +1,7 @@
 packages:
   - apps/web
   - apps/api
+  - packages/contracts
 
 # Only these existing native tooling dependencies may run install scripts.
 onlyBuiltDependencies:

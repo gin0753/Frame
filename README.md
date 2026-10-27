@@ -23,7 +23,7 @@ pnpm run format:check
 
 ## Architecture and scope
 
-`apps/web` and `apps/api` are active pnpm workspaces. `packages/contracts` remains reserved for Stage 1.4. The web app uses App Router server rendering, small client regions for Radix navigation, Embla rails and genre filtering, and a provider-independent movie presentation model. No task orchestrator or global state library is needed.
+`apps/web`, `apps/api` and `packages/contracts` are active pnpm workspaces. Shared runtime HTTP schemas live in [contracts](packages/contracts/README.md). The web app uses App Router server rendering, small client regions for Radix navigation, Embla rails and genre filtering, and a provider-independent movie presentation model. No task orchestrator or global state library is needed.
 
 - [Product specification](docs/product-specification.md)
 - [Architecture](docs/architecture.md)
@@ -62,6 +62,8 @@ Stage 1.3 provides local PostgreSQL, Prisma migrations and a DI-managed database
 
 ## Package manager and delivery tooling
 
-Use pnpm exclusively for installs and project scripts. `pnpm-workspace.yaml` includes only `apps/web` and `apps/api`; the root `pnpm-lock.yaml` is canonical. Native dependency install scripts are limited to the existing esbuild, fsevents and unrs-resolver tooling. Keep the default isolated workspace dependency layout; do not enable shameful hoisting to resolve missing declarations.
+Use pnpm exclusively for installs and project scripts. `pnpm-workspace.yaml` includes `apps/web`, `apps/api` and `packages/contracts`; the root `pnpm-lock.yaml` is canonical. Native dependency install scripts are limited to the existing esbuild, fsevents and unrs-resolver tooling. Keep the default isolated workspace dependency layout; do not enable shameful hoisting to resolve missing declarations.
 
 CI and deployment jobs should enable the pinned pnpm version, run `pnpm install --frozen-lockfile` from the repository root, then invoke the same web/API build commands listed above. Do not run a workspace-only install without the root lockfile. Web production preview uses `pnpm --filter @frame/web run start`; API production startup uses `pnpm run api:start` after `pnpm run api:build`. No CI workflow, deployment provider configuration or production infrastructure is currently checked in, so hosted installation/deployment remains unverified. Environment files, loopback defaults, rewrite opt-in and ingress responsibilities are unchanged.
+
+Run `pnpm run contracts:test`, `pnpm run contracts:lint` and `pnpm run openapi:check` alongside application checks. `pnpm run openapi:generate` creates validated, deterministic OpenAPI 3.1 JSON under ignored `tmp/openapi/`; no documentation route or Swagger UI is exposed. App build/dev/typecheck scripts build the shared package first. See [contract ownership and boundaries](packages/contracts/README.md).

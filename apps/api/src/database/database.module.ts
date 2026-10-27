@@ -7,6 +7,7 @@ import {
   ServiceUnavailableException,
 } from '@nestjs/common';
 import { DatabaseService } from './database.service';
+import { readinessResponseSchema } from '@frame/contracts';
 
 @Controller('ready')
 class ReadinessController {
@@ -19,7 +20,10 @@ class ReadinessController {
   async ready() {
     if (!(await this.database.isReady()))
       throw new ServiceUnavailableException();
-    return { status: 'ready', service: 'frame-api' };
+    return readinessResponseSchema.parse({
+      status: 'ready',
+      service: 'frame-api',
+    });
   }
 }
 

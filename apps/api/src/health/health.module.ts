@@ -6,6 +6,7 @@ import {
   Module,
   Inject,
 } from '@nestjs/common';
+import { healthResponseSchema } from '@frame/contracts';
 @Injectable()
 export class HealthService {
   getHealth() {
@@ -18,7 +19,7 @@ export class HealthController {
   @Get()
   @Header('Cache-Control', 'no-store')
   getHealth() {
-    return this.health.getHealth();
+    return healthResponseSchema.parse(this.health.getHealth());
   }
 }
 @Module({ controllers: [HealthController], providers: [HealthService] })

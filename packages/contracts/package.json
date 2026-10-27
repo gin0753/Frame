@@ -1,0 +1,35 @@
+{
+  "name": "@frame/contracts",
+  "version": "0.1.0",
+  "private": true,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc --noEmit -p tsconfig.test.json",
+    "lint": "eslint . --max-warnings 0",
+    "test": "pnpm run build && pnpm run typecheck && node --test test/*.test.cjs",
+    "openapi:generate": "pnpm run build && node scripts/openapi.cjs",
+    "openapi:check": "pnpm run build && node scripts/openapi.cjs --check"
+  },
+  "dependencies": {
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@apidevtools/swagger-parser": "13.1.0",
+    "@asteasolutions/zod-to-openapi": "9.1.0",
+    "@types/node": "^24.19.2",
+    "eslint": "^10.13.0",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.0.0"
+  }
+}

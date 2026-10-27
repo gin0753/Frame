@@ -9,6 +9,8 @@ const net = require('node:net');
 const { chromium, expect } = require('@playwright/test');
 const root = path.resolve(__dirname, '../..');
 const webRequire = createRequire(path.join(root, 'apps/web/package.json'));
+const apiRequire = createRequire(path.join(root, 'apps/api/package.json'));
+const { healthResponseSchema, apiErrorSchema } = apiRequire('@frame/contracts');
 const nextCli = webRequire.resolve('next/dist/bin/next');
 const children = new Set();
 const output = [];
@@ -81,6 +83,7 @@ async function json(url, status = 200) {
   assert.equal(r.status, status);
   const body = await r.json();
   if (body.error) {
+    apiErrorSchema.parse(body);
     assert.deepEqual(Object.keys(body), ['error']);
     assert.match(body.error.requestId, /^req_[0-9a-f-]+$/);
     assert.equal(body.error.requestId, r.headers.get('x-request-id'));
@@ -90,7 +93,8 @@ async function json(url, status = 200) {
     );
     return { statusCode: status, message: body.error.message };
   }
-  return body;
+  // Probe failures are deliberately a Next-only 502 shape; successful health is shared.
+  return status === 200 ? healthResponseSchema.parse(body) : body;
 }
 const health = { status: 'ok', service: 'frame-api' };
 test(
@@ -255,9 +259,33 @@ test(
         { message: 'API unavailable' },
       );
       // A real non-JSON upstream and a stalled upstream exercise server fetch failures.
-      for (const mode of ['non-json', 'timeout']) {
+      for (const mode of [
+        'non-json',
+        'malformed-json',
+        'http-failure',
+        'body-timeout',
+        'timeout',
+      ]) {
         const server = require('node:http').createServer((req, res) => {
           if (mode === 'non-json') res.end('PRIVATE upstream HTML');
+          if (mode === 'malformed-json') {
+            res.setHeader('Content-Type', 'application/json');
+            res.end(
+              JSON.stringify({
+                status: 'ok',
+                service: 'wrong',
+                password: 'PRIVATE upstream value',
+              }),
+            );
+          }
+          if (mode === 'http-failure') {
+            res.writeHead(503, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ status: 'ok', service: 'frame-api' }));
+          }
+          if (mode === 'body-timeout') {
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.write('{"status":');
+          }
         });
         await new Promise((r) => server.listen(apiPort, '127.0.0.1', r));
         try {
@@ -266,8 +294,10 @@ test(
             await json(webOrigin + '/transport-stage12-probe', 502),
             { message: 'API unavailable' },
           );
-          if (mode === 'timeout') {
+          if (mode === 'timeout' || mode === 'body-timeout') {
             assert(Date.now() - before < 8000);
+          }
+          if (mode === 'timeout') {
             assert.equal(
               (
                 await fetch(webOrigin + '/api/v1/health', {

@@ -7,6 +7,11 @@ const { createServer } = require('node:net');
 const { resolve } = require('node:path');
 const { setTimeout: pause } = require('node:timers/promises');
 const { Pool } = require('pg');
+const {
+  healthResponseSchema,
+  readinessResponseSchema,
+  apiErrorSchema,
+} = require('@frame/contracts');
 const { get } = require('node:http');
 const { PrismaPg } = require('@prisma/adapter-pg');
 const { PrismaClient } = require('../dist/generated/prisma/client');
@@ -169,6 +174,10 @@ test('isolated real PostgreSQL foundation', { timeout: 180000 }, async (t) => {
           assert.equal(response.status, 503);
           assert.equal(response.headers.get('cache-control'), 'no-store');
           const body = await response.text();
+          assert.equal(
+            apiErrorSchema.parse(JSON.parse(body)).error.code,
+            'HTTP_ERROR',
+          );
           assert.ok(!body.includes(invalid.password));
           assert.ok(!body.includes(invalid.href));
           assert.ok(
@@ -273,7 +282,7 @@ test('isolated real PostgreSQL foundation', { timeout: 180000 }, async (t) => {
         const ready = await eventuallyReady(await app.getUrl());
         assert.equal(ready.status, 200);
         assert.equal(ready.headers.get('cache-control'), 'no-store');
-        assert.deepEqual(await ready.json(), {
+        assert.deepEqual(readinessResponseSchema.parse(await ready.json()), {
           status: 'ready',
           service: 'frame-api',
         });
@@ -299,10 +308,14 @@ test('isolated real PostgreSQL foundation', { timeout: 180000 }, async (t) => {
         assert.equal(ready.status, 503);
         assert.ok(Date.now() - started < 3000);
         const body = await ready.text();
+        assert.equal(
+          apiErrorSchema.parse(JSON.parse(body)).error.code,
+          'HTTP_ERROR',
+        );
         assert.ok(!body.includes(target.password));
         assert.ok(!/postgres|Prisma|password|DATABASE_URL|stack/i.test(body));
         const live = await request(`${await app.getUrl()}/api/v1/health`);
-        assert.deepEqual(await live.json(), {
+        assert.deepEqual(healthResponseSchema.parse(await live.json()), {
           status: 'ok',
           service: 'frame-api',
         });

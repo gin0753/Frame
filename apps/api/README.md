@@ -2,6 +2,8 @@
 
 NestJS Express API with the Stage 1.3 PostgreSQL foundation. `src/main.ts` creates the application and bootstraps the listener; `AppModule` imports `HealthModule` and `DatabaseModule`. Runtime configuration and sanitized errors remain local to this application. Authentication, movie endpoints and provider integration remain unimplemented.
 
+Stage 1.4 uses `@frame/contracts` for strict health/readiness response parsing and the sanitized error envelope. Shared types are inferred from Zod; no Prisma model is exported as an HTTP DTO. `ZodValidationPipe` is an explicit per-body/query/parameter boundary for future controllers: it returns parsed output and maps failures to generic HTTP 400 `VALIDATION_ERROR` through the existing filter, without Zod issues, submitted values or field paths. Current production GET routes gain no input restrictions or global serialization. Test-only validation controllers are not registered in AppModule. See [contracts](../../packages/contracts/README.md) for OpenAPI generation/checks and the public import/build strategy. No documentation endpoint is served.
+
 From the repository root:
 
 ```sh

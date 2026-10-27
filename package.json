@@ -28,7 +28,13 @@
     "db:diff": "node apps/api/scripts/database.cjs diff",
     "db:test": "pnpm run api:build && node apps/api/scripts/database.cjs test",
     "prisma:validate": "pnpm --filter @frame/api run prisma:validate",
-    "prisma:generate": "pnpm --filter @frame/api run prisma:generate"
+    "prisma:generate": "pnpm --filter @frame/api run prisma:generate",
+    "contracts:build": "pnpm --filter @frame/contracts run build",
+    "contracts:test": "pnpm --filter @frame/contracts run test",
+    "contracts:typecheck": "pnpm --filter @frame/contracts run typecheck",
+    "contracts:lint": "pnpm --filter @frame/contracts run lint",
+    "openapi:generate": "pnpm --filter @frame/contracts run openapi:generate",
+    "openapi:check": "pnpm --filter @frame/contracts run openapi:check"
   },
   "devDependencies": {
     "@playwright/test": "^1.64.1",
