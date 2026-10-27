@@ -1,0 +1,49 @@
+generator client {
+  provider     = "prisma-client"
+  output       = "../src/generated/prisma"
+  moduleFormat = "cjs"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// Settled Stage 1 rating/watched foundation. Session and Review policies are deferred.
+model User {
+  id             String         @id @default(uuid()) @db.Uuid
+  email          String         @unique
+  passwordHash   String
+  displayName    String
+  createdAt      DateTime       @default(now()) @db.Timestamptz(3)
+  updatedAt      DateTime       @updatedAt @db.Timestamptz(3)
+  deletedAt      DateTime?      @db.Timestamptz(3)
+  libraryEntries LibraryEntry[]
+  ratings        Rating[]
+}
+
+model LibraryEntry {
+  id          String    @id @default(uuid()) @db.Uuid
+  userId      String    @db.Uuid
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tmdbMovieId Int
+  inWatchlist Boolean   @default(false)
+  isFavorite  Boolean   @default(false)
+  isWatched   Boolean   @default(false)
+  viewedOn    DateTime? @db.Date
+  createdAt   DateTime  @default(now()) @db.Timestamptz(3)
+  updatedAt   DateTime  @updatedAt @db.Timestamptz(3)
+
+  @@unique([userId, tmdbMovieId])
+}
+
+model Rating {
+  id          String   @id @default(uuid()) @db.Uuid
+  userId      String   @db.Uuid
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tmdbMovieId Int
+  score       Int
+  createdAt   DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt   DateTime @updatedAt @db.Timestamptz(3)
+
+  @@unique([userId, tmdbMovieId])
+}

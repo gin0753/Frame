@@ -62,3 +62,33 @@ This approach adds no dependency or Homepage hydration cost. Local API absence p
 ## Sources inspected
 
 Installed version-specific Next documentation: `node_modules/next/dist/docs/01-app/03-api-reference/05-config/01-next-config-js/rewrites.md` and `01-app/02-guides/environment-variables.md`. Installed implementation: `dist/server/lib/router-utils/proxy-request.js`, `dist/server/base-server.js`, and `dist/build/webpack/plugins/build-manifest-plugin-utils.js`. These describe this installation; deployment behavior still requires its own proof. No frozen document has been edited.
+
+## Stage 1.2 implementation (26 October 2026)
+
+`apps/api` is now a root npm workspace using NestJS 11 with the Express adapter. The root lockfile remains authoritative. Only health, runtime validation, sanitized errors, HTTP headers and bounded lifecycle shutdown are implemented. The four frozen design documents remain unchanged.
+
+The Stage 1.1 opt-in rewrite remains the sole browser proxy. Next's installed `experimental.proxyTimeout` bounds upstream inactivity at three seconds. Its failure response is generic HTTP 500 plain text; successful Nest responses and Nest error responses are JSON. Disabled rewrites fall through to Next's 404 page. The local proxy remains unsuitable as a hardened production ingress.
+
+The server-only `src/lib/server/health.ts` consumer validates the fixed origin, uses `/api/v1/health` once, sends no cookies, disables caching and redirects, and bounds fetch/body parsing at three seconds. Invalid HTTP status, non-JSON content and invalid health payloads fail with a generic error. `FRAME_API_ORIGIN`, if supplied, is also validated while loading Next configuration, even when rewrites are disabled. The rewrite retains its stricter loopback requirement. Internal deployment origins may be HTTP(S), without credentials, path, query or fragment.
+
+On this Node 24 installation, Next's legacy compiled-config loader failed to resolve relative helpers. Web dev/build/start commands therefore select the installed native TypeScript config loader and use explicit `.ts` configuration imports. Older supported Node 22 installations may need `NODE_OPTIONS=--experimental-transform-types`, as described by the installed Next TypeScript guide.
+
+`pnpm run test:transport` starts real test-only Nest and Next processes and Chromium, with readiness polling and cleanup. A temporary server-only Next route exercises the direct server fetch; it always denies production and is removed before the production build. Failure/observation controllers exist only in the test fixture. Neither is shipped as an application diagnostic endpoint. The harness must run exclusively against the web build directory; do not run it alongside another Next dev/build process. Browser installation: `pnpm exec playwright install chromium`, or set `FRAME_CHROMIUM_EXECUTABLE` to an existing compatible Chromium binary.
+
+Verified development paths are browser → same-origin rewrite → Nest, and Next server execution → validated origin → Nest. Production browser transport is tested separately; production server-side consumption is not claimed because the temporary probe is excluded. Deployment ingress and session behavior remain unverified.
+
+## pnpm workspace migration (26 October 2026)
+
+The package-manager choices above are superseded by pnpm 10.34.9, explicitly pinned in the root packageManager field. Node >=22.13.0 remains unchanged (validation uses 24.16.0). The exact workspace list is apps/web and apps/api in pnpm-workspace.yaml; contracts remains reserved. The npm lockfile is imported before removal, and the complete root pnpm-lock.yaml becomes the only canonical install lock. Historical npm commands and measurements in frozen documents and engineering debt remain historical evidence.
+
+Root script names and app behavior remain unchanged; scripts select their owner through pnpm filters. Transport tooling resolves Next's CLI from the web workspace and Nest decorators from the API workspace rather than relying on npm's root hoisting. Dependency isolation is retained. Production listener defaults, health/error behavior, Next rewrites and server-only configuration are unchanged. No CI/deployment configuration or infrastructure is introduced. See the root README for frozen-lockfile install and production commands.
+
+## Stage 1.4 contract ownership (27 October 2026)
+
+Activate `packages/contracts` as the third explicit pnpm workspace. Its Zod 4 schemas own implemented health/readiness/error HTTP shapes; public inferred types and compiled CommonJS exports serve Nest and Next without an ESM migration or framework/ORM dependencies. Apps build it before consuming it. Strict response objects reject unknown fields; current status codes, literals, error messages and server-generated request IDs remain unchanged. In particular readiness 503 remains HTTP_ERROR, not a speculative catalog error.
+
+Controllers/services validate their specific success boundaries, and the existing filter validates its normalized error envelope. An explicit local Zod pipe supplies future body/query/param validation; test-only controllers prove it without adding production endpoints. Next's existing server-only health consumer parses unknown JSON with the same schema, retaining the fixed origin, three-second timeout, no-store, redirect rejection and generic failure. The Homepage remains fixture-based.
+
+Use zod-to-openapi 9.1.0 with Zod 4.6.7 and a standalone OpenAPI 3.1 generation/check command. Nest Swagger's Standard Schema integration was evaluated, but the latest Swagger 12 targets Nest 12; using Nest 11 Swagger 11 would still add framework metadata/dependencies to this two-route foundation. The standalone generator keeps schemas authoritative and requires no production Swagger module/UI. Route metadata lives beside shared schemas; real HTTP and document tests verify agreement. Validate generated output using swagger-parser 13.1.0 and keep it in ignored tmp/openapi rather than maintain a checked-in snapshot. No remote references, local server URLs or internal models enter the document. General Zod refinements remain runtime guarantees only unless their generated schema behavior is separately tested. Hosted CI/deployment and all previously recorded quality/security conditions remain open.
+
+Compatibility references: [Zod](https://zod.dev/packages/zod), [zod-to-openapi](https://github.com/asteasolutions/zod-to-openapi), and [Nest Swagger / Standard Schema](https://docs.nestjs.com/openapi/introduction). Selected package versions and peer requirements were checked in the registry and validated locally rather than inferred from unversioned examples.
