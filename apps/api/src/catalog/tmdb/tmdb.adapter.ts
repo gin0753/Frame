@@ -6,6 +6,7 @@ import {
   tmdbDetailSchema,
   tmdbGenresSchema,
   tmdbMoviesSchema,
+  tmdbImageConfigSchema,
 } from './tmdb.schemas';
 
 export const TMDB_OPTIONS = Symbol('TMDB_OPTIONS');
@@ -63,22 +64,26 @@ export class TmdbAdapter {
     return this.read('/genre/movie/list', tmdbGenresSchema, options);
   }
 
+  imageConfiguration(options: ReadOptions = {}) {
+    return this.read('/configuration', tmdbImageConfigSchema, options);
+  }
+
   details(movieId: number, options: ReadOptions = {}) {
     if (!Number.isInteger(movieId) || movieId < 1 || movieId > 2147483647)
       throw new TmdbError('INVALID_REQUEST');
-    return this.read(`/movie/${movieId}`, tmdbDetailSchema, options).then(
-      (movie) => {
-        if (movie.id !== movieId) throw new TmdbError('UNEXPECTED_RESPONSE');
-        return movie;
-      },
-    );
+    return this.read(`/movie/${movieId}`, tmdbDetailSchema, options, {
+      append_to_response: 'credits,videos',
+    }).then((movie) => {
+      if (movie.id !== movieId) throw new TmdbError('UNEXPECTED_RESPONSE');
+      return movie;
+    });
   }
 
   private async read<T>(
     path: string,
     schema: z.ZodType<T>,
     options: ReadOptions,
-    query: Record<string, number> = {},
+    query: Record<string, number | string> = {},
   ): Promise<T> {
     if (!this.#token) throw new TmdbError('CONFIGURATION');
     const language = options.language ?? 'en-US';

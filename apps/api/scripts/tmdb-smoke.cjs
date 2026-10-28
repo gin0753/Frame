@@ -1,6 +1,11 @@
 require('reflect-metadata');
 const { TmdbAdapter } = require('../dist/catalog/tmdb/tmdb.adapter');
 const { tmdbConfig } = require('../dist/catalog/tmdb/tmdb.config');
+const {
+  normalizeMoviePage,
+  normalizeMovieDetail,
+  normalizeGenre,
+} = require('../dist/catalog/catalog.normalizer');
 
 async function main() {
   if (!process.env.TMDB_READ_ACCESS_TOKEN) {
@@ -10,11 +15,16 @@ async function main() {
   }
   const config = tmdbConfig({ ...process.env, TMDB_ENABLED: 'true' });
   const adapter = new TmdbAdapter({ config });
-  // Four sequential, bounded requests, no retry, provider bodies never logged or saved.
+  // Five sequential, bounded requests, no retry, provider bodies never logged or saved.
   const trending = await adapter.trending('week');
   const popular = await adapter.popular();
   const genres = await adapter.genres();
   const detail = await adapter.details(11);
+  const images = await adapter.imageConfiguration();
+  normalizeMoviePage(trending, images, 1, true);
+  normalizeMoviePage(popular, images, 1);
+  normalizeMovieDetail(detail, images);
+  genres.genres.forEach(normalizeGenre);
   if (
     !trending.results.length ||
     !popular.results.length ||

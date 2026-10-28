@@ -1,4 +1,4 @@
-const { test } = require('node:test');
+﻿const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const { inspect } = require('node:util');
 const { createServer } = require('node:http');
@@ -16,7 +16,8 @@ const { createApp } = require('../dist/main');
 // Synthetic values only. No TMDB payload or credential is stored in this suite.
 const token = 'synthetic.private-token';
 const config = { enabled: true, token };
-const movie = { id: 42, title: 'Synthetic film' };
+const movie = { id: 42, title: 'Synthetic film', vote_count: 0, genre_ids: [] };
+const detail = { id: 42, title: 'Synthetic film', vote_count: 0, genres: [] };
 const page = { page: 1, results: [movie], total_pages: 1, total_results: 1 };
 const json = (body, status = 200) =>
   new Response(JSON.stringify(body), {
@@ -83,7 +84,7 @@ test('four operations select fixed HTTPS paths, encoded queries and bearer heade
         url.pathname.includes('genre')
           ? { genres: [{ id: 18, name: 'Synthetic genre' }] }
           : url.pathname === '/3/movie/42'
-            ? movie
+            ? detail
             : page,
       );
     },
@@ -92,7 +93,7 @@ test('four operations select fixed HTTPS paths, encoded queries and bearer heade
   await adapter.trending('week', { language: 'fr-FR' });
   await adapter.popular({ language: 'pt-BR', page: 500 });
   await adapter.genres({ language: 'en' });
-  assert.deepEqual(await adapter.details(42), movie);
+  assert.deepEqual(await adapter.details(42), detail);
   assert.deepEqual(
     observed.map(({ url }) => url.pathname),
     [
@@ -181,12 +182,12 @@ test('minimal provider projections reject malformed JSON/shapes and mismatched i
     category('UNEXPECTED_RESPONSE'),
   );
   await assert.rejects(
-    adapter({ ...movie, id: 43 }).details(42),
+    adapter({ ...detail, id: 43 }).details(42),
     category('UNEXPECTED_RESPONSE'),
   );
   assert.deepEqual(
-    await adapter({ ...movie, internal: token }).details(42),
-    movie,
+    await adapter({ ...detail, internal: token }).details(42),
+    detail,
   );
   assert.deepEqual(await adapter({ genres: [] }).genres(), { genres: [] });
   assert.deepEqual(
@@ -347,7 +348,10 @@ test('Nest owns one provider; enabling without credentials fails startup safely'
       '/api/v1/genres',
       '/api/v1/tmdb',
     ])
-      assert.equal((await fetch(origin + path)).status, 404);
+      assert.equal(
+        (await fetch(origin + path)).status,
+        path === '/api/v1/tmdb' ? 404 : 503,
+      );
   } finally {
     await app?.close();
     if (previous === undefined) delete process.env.TMDB_ENABLED;

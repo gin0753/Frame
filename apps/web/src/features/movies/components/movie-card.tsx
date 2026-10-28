@@ -16,7 +16,7 @@ export function MovieCard({
     <article className={cn('movie-card', `movie-card-${variant}`)}>
       <a
         href={movie.exploreUrl}
-        aria-label={`Explore ${movie.title} on Blender Studio`}
+        aria-label={`Explore ${movie.title} on ${movie.destinationLabel ?? 'Blender Studio'}`}
         className="movie-card-link group"
         draggable={false}
       >
@@ -45,7 +45,7 @@ export function MovieCard({
         </div>
         <div className="movie-card-heading">
           <h3>{movie.title}</h3>
-          <span>{movie.year}</span>
+          {movie.year !== null && <span>{movie.year}</span>}
         </div>
         <p className="movie-genres">{movie.genres[0]}</p>
       </a>

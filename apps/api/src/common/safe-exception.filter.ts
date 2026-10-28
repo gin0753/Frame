@@ -8,6 +8,7 @@ import type { Response } from 'express';
 import { STATUS_CODES } from 'node:http';
 import { randomUUID } from 'node:crypto';
 import { apiErrorSchema } from '@frame/contracts';
+import { CatalogUnavailableException } from './catalog-unavailable.exception';
 export function safeError(error: unknown) {
   const status = error instanceof HttpException ? error.getStatus() : 500;
   return { statusCode: status, message: STATUS_CODES[status] ?? 'Error' };
@@ -35,7 +36,10 @@ export class SafeExceptionFilter implements ExceptionFilter {
       .json(
         apiErrorSchema.parse({
           error: {
-            code: errorCodes[body.statusCode] ?? 'HTTP_ERROR',
+            code:
+              error instanceof CatalogUnavailableException
+                ? 'CATALOG_UNAVAILABLE'
+                : (errorCodes[body.statusCode] ?? 'HTTP_ERROR'),
             message: body.message,
             requestId,
           },

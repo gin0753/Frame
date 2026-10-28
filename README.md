@@ -1,6 +1,6 @@
-# FRAME
+﻿# FRAME
 
-A cinematic movie discovery interface built with Next.js, React and TypeScript. The Homepage uses six licensed Blender films, responsive movie rails and genre filtering. The Homepage runs entirely on local fixtures. NestJS provides health/readiness and an internal, opt-in TMDB adapter; authentication, public catalog endpoints and live Homepage rankings remain unimplemented.
+A cinematic movie discovery interface built with Next.js, React and TypeScript. The Homepage uses six licensed Blender films, responsive movie rails and genre filtering. The Homepage runs entirely on local fixtures. NestJS provides health/readiness and normalized public catalog reads through an opt-in, server-only TMDB adapter. Authentication and live Homepage rankings remain unimplemented.
 
 ## Run locally
 
@@ -62,7 +62,7 @@ Stage 1.3 provides local PostgreSQL, Prisma migrations and a DI-managed database
 
 ## Package manager and delivery tooling
 
-Stage 2.1's internal TMDB adapter is disabled by default and adds no public routes. For private configuration and the explicitly invoked live verification command, see [API provider instructions](apps/api/README.md#internal-tmdb-provider-stage-21). Frontend/contract checks require no TMDB credential. Normalized DTOs, resilience/cache policy and fixture parity remain Stage 2.2–2.4 work.
+The TMDB adapter is disabled by default; Stage 2.2 adds normalized Trending, Popular, genre and movie-detail reads. For private configuration and the explicitly invoked live verification command, see [API provider instructions](apps/api/README.md#internal-tmdb-provider-stage-21). Frontend/contract checks require no TMDB credential. Trending provisionally accepts only omitted page/page=1 (default week); multi-page support remains UNVERIFIED. Popular supports pages 1–500. See the API README for normalized semantics, real HTTP tests and limitations. Resilience/cache policy and fixture parity remain Stage 2.3–2.4 work; the Homepage remains fixture-based.
 
 Use pnpm exclusively for installs and project scripts. `pnpm-workspace.yaml` includes `apps/web`, `apps/api` and `packages/contracts`; the root `pnpm-lock.yaml` is canonical. Native dependency install scripts are limited to the existing esbuild, fsevents and unrs-resolver tooling. Keep the default isolated workspace dependency layout; do not enable shameful hoisting to resolve missing declarations.
 
