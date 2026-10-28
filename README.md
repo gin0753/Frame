@@ -1,6 +1,6 @@
 # FRAME
 
-A cinematic movie discovery interface built with Next.js, React and TypeScript. The Homepage uses six licensed Blender films, responsive movie rails and genre filtering. The Homepage runs entirely on local fixtures. A NestJS health API is available; authentication, live rankings and TMDB integration remain unimplemented.
+A cinematic movie discovery interface built with Next.js, React and TypeScript. The Homepage uses six licensed Blender films, responsive movie rails and genre filtering. The Homepage runs entirely on local fixtures. NestJS provides health/readiness and an internal, opt-in TMDB adapter; authentication, public catalog endpoints and live Homepage rankings remain unimplemented.
 
 ## Run locally
 
@@ -61,6 +61,8 @@ See [API operations](apps/api/README.md) for runtime variables, security boundar
 Stage 1.3 provides local PostgreSQL, Prisma migrations and a DI-managed database client. `/api/v1/health` remains process liveness; `/api/v1/ready` checks real database connectivity. See [API operations](apps/api/README.md#local-postgresql-and-migrations) for `db:init`, `db:up`, `db:migrate`, `db:test` and `db:down`. The Homepage still uses fixtures; accounts and movie APIs remain unimplemented.
 
 ## Package manager and delivery tooling
+
+Stage 2.1's internal TMDB adapter is disabled by default and adds no public routes. For private configuration and the explicitly invoked live verification command, see [API provider instructions](apps/api/README.md#internal-tmdb-provider-stage-21). Frontend/contract checks require no TMDB credential. Normalized DTOs, resilience/cache policy and fixture parity remain Stage 2.2–2.4 work.
 
 Use pnpm exclusively for installs and project scripts. `pnpm-workspace.yaml` includes `apps/web`, `apps/api` and `packages/contracts`; the root `pnpm-lock.yaml` is canonical. Native dependency install scripts are limited to the existing esbuild, fsevents and unrs-resolver tooling. Keep the default isolated workspace dependency layout; do not enable shameful hoisting to resolve missing declarations.
 
