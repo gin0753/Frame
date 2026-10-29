@@ -4,11 +4,22 @@
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { genresResponseSchema } from '@frame/contracts';
+import {
+  genresResponseSchema,
+  moviePageSchema,
+  movieDetailSchema,
+} from '@frame/contracts';
 import { ZodError } from 'zod';
 import { TmdbAdapter } from './tmdb/tmdb.adapter';
 import { TmdbError } from './tmdb/tmdb.error';
 import type { TmdbImageConfig } from './tmdb/tmdb.schemas';
+import { tmdbImageConfigSchema } from './tmdb/tmdb.schemas';
+import {
+  CatalogCoordinator,
+  CatalogCoordinationError,
+} from './catalog.coordinator';
+import { CATALOG_DEADLINE_MS, catalogKey } from './catalog.policy';
+export { CATALOG_DEADLINE_MS } from './catalog.policy';
 import { CatalogUnavailableException } from '../common/catalog-unavailable.exception';
 import {
   normalizeGenre,
@@ -19,15 +30,28 @@ import {
 // Outer web consumer and local proxy remain at 3000 ms. Reserve 800 ms for
 // routing, normalization and response delivery; the adapter's standalone 3000 ms
 // child guard is capped by this shared signal, never added to this budget.
-export const CATALOG_DEADLINE_MS = 2200;
 
 @Injectable()
 export class CatalogService {
-  constructor(@Inject(TmdbAdapter) private readonly tmdb: TmdbAdapter) {}
+  #metrics = { requests: 0, totalDurationMs: 0, failed: 0 };
+  constructor(
+    @Inject(TmdbAdapter) private readonly tmdb: TmdbAdapter,
+    @Inject(CatalogCoordinator)
+    private readonly coordinator: CatalogCoordinator,
+  ) {}
+  diagnostics() {
+    return {
+      ...this.#metrics,
+      coordinator: this.coordinator.diagnostics(),
+      provider: this.tmdb.diagnostics(),
+    };
+  }
   private async read<T>(
-    work: (signal: AbortSignal, cancel: () => void) => Promise<T>,
+    work: (signal: AbortSignal) => Promise<T>,
     callerSignal?: AbortSignal,
   ): Promise<T> {
+    const started = performance.now();
+    this.#metrics.requests++;
     const controller = new AbortController();
     const cancel = () => controller.abort();
     let timedOut = false;
@@ -43,11 +67,16 @@ export class CatalogService {
     ]);
     try {
       signal.throwIfAborted();
-      return await work(signal, cancel);
+      const result = await work(signal);
+      signal.throwIfAborted();
+      return result;
     } catch (error) {
+      this.#metrics.failed++;
       if (timedOut || callerSignal?.aborted)
         throw new CatalogUnavailableException(503);
       if (error instanceof ZodError) throw new CatalogUnavailableException(502);
+      if (error instanceof CatalogCoordinationError)
+        throw new CatalogUnavailableException(503);
       if (!(error instanceof TmdbError)) throw error;
       const status =
         error.category === 'INVALID_REQUEST'
@@ -68,19 +97,32 @@ export class CatalogService {
     } finally {
       clearTimeout(timer);
       cancel();
+      this.#metrics.totalDurationMs += performance.now() - started;
     }
   }
   private movieRead<T, R>(
     loadMovie: (signal: AbortSignal) => Promise<T>,
     normalize: (movie: T, config: TmdbImageConfig) => R,
-    callerSignal?: AbortSignal,
+    sharedSignal: AbortSignal,
   ) {
-    return this.read(async (signal, cancel) => {
+    const controller = new AbortController();
+    const cancel = () =>
+      controller.abort(sharedSignal.aborted ? sharedSignal.reason : undefined);
+    const signal = AbortSignal.any([sharedSignal, controller.signal]);
+    return (async () => {
       // Both operations are independent. Schedule both before awaiting either;
       // retain their promises so failed/aborted siblings are cancelled and drained.
       const requests = [
         Promise.resolve().then(() => loadMovie(signal)),
-        Promise.resolve().then(() => this.tmdb.imageConfiguration({ signal })),
+        Promise.resolve().then(() =>
+          this.coordinator.get(
+            catalogKey('configuration'),
+            'configuration',
+            tmdbImageConfigSchema,
+            (signal) => this.tmdb.imageConfiguration({ signal }),
+            signal,
+          ),
+        ),
       ] as const;
       try {
         const [movie, config] = await Promise.all(requests);
@@ -90,46 +132,89 @@ export class CatalogService {
         cancel();
         await Promise.allSettled(requests);
       }
-    }, callerSignal);
+    })();
   }
   trending(timeWindow: 'day' | 'week', signal?: AbortSignal) {
-    return this.movieRead(
-      (signal) => this.tmdb.trending(timeWindow, { signal }),
-      (movie, config) => normalizeMoviePage(movie, config, 1, true),
+    return this.read(
+      (caller) =>
+        this.coordinator.get(
+          catalogKey('trending', [timeWindow, 1]),
+          'trending',
+          moviePageSchema,
+          (shared) =>
+            this.movieRead(
+              (signal) => this.tmdb.trending(timeWindow, { signal }),
+              (movie, config) => normalizeMoviePage(movie, config, 1, true),
+              shared,
+            ),
+          caller,
+        ),
       signal,
     );
   }
   popular(page: number, signal?: AbortSignal) {
-    return this.movieRead(
-      (signal) => this.tmdb.popular({ page, signal }),
-      (movie, config) => normalizeMoviePage(movie, config, page),
+    return this.read(
+      (caller) =>
+        this.coordinator.get(
+          catalogKey('popular', [page]),
+          'popular',
+          moviePageSchema,
+          (shared) =>
+            this.movieRead(
+              (signal) => this.tmdb.popular({ page, signal }),
+              (movie, config) => normalizeMoviePage(movie, config, page),
+              shared,
+            ),
+          caller,
+        ),
       signal,
     );
   }
   genres(signal?: AbortSignal) {
     return this.read(
-      async (signal) =>
-        genresResponseSchema.parse({
-          items: (await this.tmdb.genres({ signal })).genres.map(
-            normalizeGenre,
-          ),
-        }),
+      (caller) =>
+        this.coordinator.get(
+          catalogKey('genres'),
+          'genres',
+          genresResponseSchema,
+          async (signal) =>
+            genresResponseSchema.parse({
+              items: (await this.tmdb.genres({ signal })).genres.map(
+                normalizeGenre,
+              ),
+            }),
+          caller,
+        ),
       signal,
     );
   }
   detail(id: number, signal?: AbortSignal) {
-    return this.movieRead(
-      async (signal) => {
-        try {
-          return await this.tmdb.details(id, { signal });
-        } catch (error) {
-          // Only a movie-operation 404 establishes that the movie is absent.
-          if (error instanceof TmdbError && error.category === 'NOT_FOUND')
-            throw new NotFoundException();
-          throw error;
-        }
-      },
-      normalizeMovieDetail,
+    return this.read(
+      (caller) =>
+        this.coordinator.get(
+          catalogKey('detail', [id, 'credits,videos']),
+          'detail',
+          movieDetailSchema,
+          (shared) =>
+            this.movieRead(
+              async (signal) => {
+                try {
+                  return await this.tmdb.details(id, { signal });
+                } catch (error) {
+                  // Only a movie-operation 404 establishes that the movie is absent.
+                  if (
+                    error instanceof TmdbError &&
+                    error.category === 'NOT_FOUND'
+                  )
+                    throw new NotFoundException();
+                  throw error;
+                }
+              },
+              normalizeMovieDetail,
+              shared,
+            ),
+          caller,
+        ),
       signal,
     );
   }

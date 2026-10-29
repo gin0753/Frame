@@ -26,6 +26,13 @@ export class TmdbAdapter {
   #token: string | undefined;
   #fetch: typeof globalThis.fetch;
   #timeoutMs: number;
+  #requests = 0;
+  #failures: Partial<Record<import('./tmdb.error').TmdbErrorCategory, number>> =
+    {};
+
+  diagnostics() {
+    return { requests: this.#requests, failures: { ...this.#failures } };
+  }
 
   constructor(@Inject(TMDB_OPTIONS) options: TmdbOptions) {
     const config = tmdbConfig({
@@ -101,6 +108,7 @@ export class TmdbAdapter {
     ]);
     try {
       signal.throwIfAborted();
+      this.#requests++;
       const response = await this.#fetch(url, {
         method: 'GET',
         headers: {
@@ -166,10 +174,20 @@ export class TmdbAdapter {
       }
       throw new TmdbError('UNEXPECTED_RESPONSE');
     } catch (error) {
-      if (options.signal?.aborted) throw new TmdbError('CANCELLED');
-      if (deadline.signal.aborted) throw new TmdbError('TIMEOUT');
-      if (error instanceof TmdbError) throw error;
-      throw new TmdbError('NETWORK');
+      const failure = options.signal?.aborted
+        ? new TmdbError(
+            options.signal.reason?.name === 'TimeoutError'
+              ? 'TIMEOUT'
+              : 'CANCELLED',
+          )
+        : deadline.signal.aborted
+          ? new TmdbError('TIMEOUT')
+          : error instanceof TmdbError
+            ? error
+            : new TmdbError('NETWORK');
+      this.#failures[failure.category] =
+        (this.#failures[failure.category] ?? 0) + 1;
+      throw failure;
     } finally {
       clearTimeout(timer);
     }
