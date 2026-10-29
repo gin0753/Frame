@@ -1,6 +1,7 @@
 ﻿import { describe, expect, it } from 'vitest';
 import { movieDetailSchema, movieSummarySchema } from '@frame/contracts';
 import { toMoviePreview } from './catalog-adapter';
+import { movieImageFallbacks } from './image-fallbacks';
 const summary = movieSummarySchema.parse({
   id: 42,
   source: 'tmdb',
@@ -23,6 +24,71 @@ const fallbacks = {
   backdrop: { src: '/test-neutral-backdrop.svg', width: 1280, height: 720 },
 };
 describe('catalog presentation boundary', () => {
+  it.each([
+    {
+      posterUrl: null,
+      backdropUrl: null,
+      releaseDate: null,
+      voteAverage: null,
+      genreIds: [],
+    },
+    {
+      posterUrl: 'https://image.tmdb.org/t/p/w500/poster.jpg',
+      backdropUrl: null,
+      releaseDate: '2024-01-01',
+      voteAverage: 8.2,
+      genreIds: [18],
+    },
+    {
+      posterUrl: null,
+      backdropUrl: 'https://image.tmdb.org/t/p/w1280/backdrop.jpg',
+      releaseDate: null,
+      voteAverage: 0,
+      genreIds: [],
+    },
+  ])(
+    'preserves valid nullable metadata and neutral image geometry: %j',
+    (fields) => {
+      const input = {
+        ...summary,
+        ...fields,
+        title: 'A long synthetic title '.repeat(10).trim(),
+      };
+      const before = structuredClone(input);
+      const result = toMoviePreview(input, [], movieImageFallbacks);
+      expect(result.movie.id).toBe('tmdb:42');
+      expect(result.movie.title).toBe(input.title);
+      expect(result.movie.poster.src).toBe(
+        input.posterUrl ?? movieImageFallbacks.poster.src,
+      );
+      expect(result.movie.backdrop.src).toBe(
+        input.backdropUrl ?? movieImageFallbacks.backdrop.src,
+      );
+      expect([result.movie.poster.width, result.movie.poster.height]).toEqual([
+        500, 750,
+      ]);
+      expect([
+        result.movie.backdrop.width,
+        result.movie.backdrop.height,
+      ]).toEqual([1280, 720]);
+      expect(result.movie.recognition).toBeUndefined();
+      expect(result.movie).not.toHaveProperty('voteAverage');
+      expect(input).toEqual(before);
+    },
+  );
+  it.each([
+    'https://evil.test/x.jpg',
+    'https://image.tmdb.org/t/p/w500/../x.jpg',
+    'https://image.tmdb.org/t/p/w500/x.jpg?token=secret',
+  ])(
+    'uses neutral artwork for an unapproved normalized image URL: %s',
+    (posterUrl) => {
+      expect(
+        toMoviePreview({ ...summary, posterUrl }, [], movieImageFallbacks).movie
+          .poster,
+      ).toEqual(movieImageFallbacks.poster);
+    },
+  );
   it('preserves identity and known genre order, omits absent metadata and uses supplied fallbacks', () => {
     const before = structuredClone(summary);
     const result = toMoviePreview(

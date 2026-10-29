@@ -37,6 +37,14 @@ export function Footer() {
           terms.
         </p>
       </details>
+      {/* Approved TMDB logo belongs here once its official asset is verified.
+          Text/link preparation alone is not complete provider attribution. */}
+      <div className="asset-credits text-sm" aria-label="TMDB credits">
+        <p>
+          This product uses the TMDB API but is not endorsed or certified by
+          TMDB. <a href="https://www.themoviedb.org">TMDB</a>
+        </p>
+      </div>
       <div className="footer-bottom">
         <span>© 2026 FRAME</span>
         <span>An independent eye on cinema.</span>

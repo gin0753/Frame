@@ -404,6 +404,9 @@
     text-wrap: balance;
     overflow-wrap: anywhere;
   }
+  .movie-image:has([data-image-unavailable]) .poster-title {
+    display: none;
+  }
   .recognition-link {
     display: inline-flex;
     gap: 0.5rem;

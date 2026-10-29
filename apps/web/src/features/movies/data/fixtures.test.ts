@@ -16,6 +16,14 @@ const manifest = JSON.parse(
 
 it('ships every normalized fixture image with matching provenance, dimensions and content hash', async () => {
   const movies = await fixtureMovieSource.listPreviews();
+  expect(movies.map((movie) => movie.id)).toEqual([
+    'charge',
+    'sintel',
+    'spring',
+    'tears-of-steel',
+    'cosmos-laundromat',
+    'sprite-fright',
+  ]);
   expect(new Set(movies.map((movie) => movie.id)).size).toBe(movies.length);
   for (const movie of movies) {
     expect(new URL(movie.exploreUrl).hostname).toBe('studio.blender.org');

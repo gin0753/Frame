@@ -1,4 +1,4 @@
-import Image from 'next/image';
+import { MovieArtwork } from './movie-artwork';
 import { ArrowUpRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import type { MoviePreview } from '../model';
@@ -12,10 +12,8 @@ export function Hero({ movie }: { movie: MoviePreview }) {
       aria-labelledby="featured-title"
     >
       <div className="hero-image">
-        <Image
-          src={movie.backdrop.src}
-          alt=""
-          fill
+        <MovieArtwork
+          artwork={movie.backdrop}
           preload
           sizes="100vw"
           className="hero-backdrop"

@@ -6,7 +6,28 @@
 import type { MovieSummary, MovieDetail, Genre } from '@frame/contracts';
 import type { MovieImage, MoviePreview } from '../model';
 
-/** Pure boundary; local neutral fallback assets are supplied by composition after Stage 2.4 verification. */
+function artwork(
+  url: string | null,
+  size: 'w500' | 'w1280',
+  fallback: MovieImage,
+): MovieImage {
+  // Public URL syntax alone does not establish an approved artwork source.
+  // Unusable artwork falls back without making the movie/link unusable.
+  const safe =
+    url &&
+    new RegExp(
+      `^https://image\\.tmdb\\.org/t/p/${size}/[A-Za-z0-9_-]+\\.(?:jpg|jpeg|png|webp)$`,
+    ).test(url);
+  return safe
+    ? {
+        src: url,
+        width: size === 'w500' ? 500 : 1280,
+        height: size === 'w500' ? 750 : 720,
+      }
+    : { ...fallback };
+}
+
+/** Pure boundary; composition may supply the verified FRAME-owned movieImageFallbacks. */
 export function toMoviePreview(
   input: MovieSummary,
   genres: readonly Genre[],
@@ -39,12 +60,8 @@ export function toMoviePreview(
         ? enrichment.runtimeMinutes * 60
         : null,
       // These are selected presentation ratios, not claimed original image dimensions.
-      poster: summary.posterUrl
-        ? { src: summary.posterUrl, width: 500, height: 750 }
-        : { ...fallbacks.poster },
-      backdrop: summary.backdropUrl
-        ? { src: summary.backdropUrl, width: 1280, height: 720 }
-        : { ...fallbacks.backdrop },
+      poster: artwork(summary.posterUrl, 'w500', fallbacks.poster),
+      backdrop: artwork(summary.backdropUrl, 'w1280', fallbacks.backdrop),
       exploreUrl: summary.externalUrl,
       destinationLabel: 'TMDB',
     },

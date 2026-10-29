@@ -1,4 +1,4 @@
-import Image from 'next/image';
+import { MovieArtwork } from './movie-artwork';
 import { ArrowUpRight } from 'lucide-react';
 import type { MoviePreview } from '../model';
 import { cn } from '@/lib/utils';
@@ -21,17 +21,14 @@ export function MovieCard({
         draggable={false}
       >
         <div className="movie-image">
-          <Image
-            src={artwork.src}
-            alt=""
-            fill
-            draggable={false}
+          <MovieArtwork
+            artwork={artwork}
+            objectPosition={artwork.position}
             sizes={
               variant === 'poster'
                 ? '(max-width: 767px) 42vw, (max-width: 1023px) 22vw, (max-width: 1279px) 20vw, 17vw'
                 : '(max-width: 767px) 78vw, (max-width: 1023px) 40vw, (max-width: 1279px) 30vw, 22vw'
             }
-            style={{ objectFit: 'cover', objectPosition: artwork.position }}
           />
           <div className="movie-image-shade" />
           <span className="card-explore" aria-hidden="true">
@@ -39,7 +36,7 @@ export function MovieCard({
           </span>
           {variant === 'poster' && (
             <div className="poster-title" aria-hidden="true">
-              <p>{movie.title}</p>
+              <p className="line-clamp-3">{movie.title}</p>
             </div>
           )}
         </div>
