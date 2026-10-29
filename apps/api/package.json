@@ -10,7 +10,8 @@
     "lint": "eslint . --max-warnings 0",
     "test": "pnpm run build && node --test test/*.test.cjs",
     "prisma:validate": "prisma validate",
-    "prisma:generate": "prisma generate"
+    "prisma:generate": "prisma generate",
+    "tmdb:smoke": "pnpm run build && node scripts/tmdb-smoke.cjs"
   },
   "dependencies": {
     "@nestjs/common": "^11.1.0",

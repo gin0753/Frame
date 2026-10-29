@@ -1,4 +1,5 @@
 import { ArrowUpRight } from 'lucide-react';
+import Image from 'next/image';
 import { assetCredits } from '@/features/movies/data/asset-credits';
 export function Footer() {
   return (
@@ -37,6 +38,25 @@ export function Footer() {
           terms.
         </p>
       </details>
+      <div className="asset-credits text-sm" aria-label="TMDB credits">
+        <a
+          href="https://www.themoviedb.org"
+          className="inline-flex min-h-11 items-center rounded-sm focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary"
+        >
+          <Image
+            src="/images/brands/tmdb.svg"
+            alt="TMDB — The Movie Database"
+            width={42304}
+            height={3540}
+            className="h-auto w-30"
+            unoptimized
+          />
+        </a>
+        <p>
+          This product uses the TMDB API but is not endorsed or certified by
+          TMDB.
+        </p>
+      </div>
       <div className="footer-bottom">
         <span>© 2026 FRAME</span>
         <span>An independent eye on cinema.</span>

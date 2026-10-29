@@ -9,7 +9,7 @@ export interface MovieImage {
 export interface MoviePreview {
   id: string;
   title: string;
-  year: number;
+  year: number | null;
   genres: readonly string[];
   synopsis: string;
   runtimeSeconds: number | null;
@@ -17,5 +17,6 @@ export interface MoviePreview {
   poster: MovieImage;
   /** Verified official destination until internal film routes exist. */
   exploreUrl: string;
+  destinationLabel?: 'TMDB' | 'Blender Studio';
   recognition?: { label: string; sourceUrl: string };
 }

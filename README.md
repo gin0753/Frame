@@ -1,6 +1,6 @@
-# FRAME
+﻿# FRAME
 
-A cinematic movie discovery interface built with Next.js, React and TypeScript. The Homepage uses six licensed Blender films, responsive movie rails and genre filtering. The Homepage runs entirely on local fixtures. A NestJS health API is available; authentication, live rankings and TMDB integration remain unimplemented.
+A cinematic movie discovery interface built with Next.js, React and TypeScript. The Homepage uses six licensed Blender films, responsive movie rails and genre filtering. The Homepage runs entirely on local fixtures. NestJS provides health/readiness and normalized public catalog reads through an opt-in, server-only TMDB adapter. Authentication and live Homepage rankings remain unimplemented.
 
 ## Run locally
 
@@ -61,6 +61,8 @@ See [API operations](apps/api/README.md) for runtime variables, security boundar
 Stage 1.3 provides local PostgreSQL, Prisma migrations and a DI-managed database client. `/api/v1/health` remains process liveness; `/api/v1/ready` checks real database connectivity. See [API operations](apps/api/README.md#local-postgresql-and-migrations) for `db:init`, `db:up`, `db:migrate`, `db:test` and `db:down`. The Homepage still uses fixtures; accounts and movie APIs remain unimplemented.
 
 ## Package manager and delivery tooling
+
+The TMDB adapter is disabled by default; Stage 2.2 adds normalized Trending, Popular, genre and movie-detail reads. For private configuration and the explicitly invoked live verification command, see [API provider instructions](apps/api/README.md#internal-tmdb-provider-stage-21). Frontend/contract checks require no TMDB credential. Trending provisionally accepts only omitted page/page=1 (default week); multi-page support remains UNVERIFIED. Popular supports pages 1–500. See the API README for normalized semantics, real HTTP tests and limitations. Stage 2.3 coalesces concurrent catalog/configuration reads with bounded shared ownership. Retained provider caching remains disabled and enablement is BLOCKED pending rights verification; see ADR-003 and the API README for policy/diagnostics/tests. Stage 2.4 prepares neutral missing/failed artwork and verifies fixture/presentation compatibility; the Homepage remains fixture-based. The TMDB notice and linked official logo are present in Footer Credits; full applicable terms and provider rights remain unresolved. See [image and attribution preparation](apps/api/README.md#stage-24-image-and-attribution-preparation).
 
 Use pnpm exclusively for installs and project scripts. `pnpm-workspace.yaml` includes `apps/web`, `apps/api` and `packages/contracts`; the root `pnpm-lock.yaml` is canonical. Native dependency install scripts are limited to the existing esbuild, fsevents and unrs-resolver tooling. Keep the default isolated workspace dependency layout; do not enable shameful hoisting to resolve missing declarations.
 

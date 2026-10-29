@@ -11,6 +11,7 @@ const {
   healthContract,
   readinessContract,
   apiErrorSchema,
+  catalogContracts,
 } = require('@frame/contracts');
 
 function generateOpenApi() {
@@ -70,6 +71,42 @@ function generateOpenApi() {
         500: errorResponse(
           'Unexpected failure: code INTERNAL_ERROR. No internal exception details.',
         ),
+      },
+    });
+  }
+  for (const contract of Object.values(catalogContracts)) {
+    registry.registerPath({
+      method: contract.method,
+      path: contract.path,
+      operationId: contract.operationId,
+      description:
+        contract === catalogContracts.trending
+          ? 'Weekly by default. Only page 1 is accepted provisionally; multi-page support is UNVERIFIED. Totals are provider-reported and do not imply additional pages are requestable.'
+          : contract === catalogContracts.popular
+            ? 'Pages 1–500; totals capped to 500 pages / 10000 results.'
+            : undefined,
+      request: {
+        query: contract.query,
+        ...('params' in contract ? { params: contract.params } : {}),
+      },
+      responses: {
+        200: {
+          description: 'Normalized FRAME catalog data.',
+          headers: cache,
+          content: { 'application/json': { schema: contract.response } },
+        },
+        400: errorResponse('Invalid or unsupported input: VALIDATION_ERROR.'),
+        ...('params' in contract
+          ? { 404: errorResponse('Movie absent: NOT_FOUND.') }
+          : {}),
+        429: errorResponse('Provider rate limit: RATE_LIMITED.'),
+        502: errorResponse(
+          'Invalid upstream response, network or server failure: CATALOG_UNAVAILABLE.',
+        ),
+        503: errorResponse(
+          'Provider disabled, authentication failure or deadline: CATALOG_UNAVAILABLE.',
+        ),
+        500: errorResponse('Unexpected internal failure: INTERNAL_ERROR.'),
       },
     });
   }

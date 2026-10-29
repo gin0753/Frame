@@ -9,6 +9,10 @@ test('OpenAPI validates, is deterministic and contains only implemented routes',
   assert.deepEqual(Object.keys(document.paths), [
     '/api/v1/health',
     '/api/v1/ready',
+    '/api/v1/movies/trending',
+    '/api/v1/movies/popular',
+    '/api/v1/genres',
+    '/api/v1/movies/{tmdbMovieId}',
   ]);
   for (const [route, statuses, schema] of [
     ['/api/v1/health', ['200', '500'], 'HealthResponse'],
