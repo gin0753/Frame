@@ -122,6 +122,12 @@ test(
         path.join(__dirname, '../visual/fixture-homepage.txt'),
         path.join(probe, 'fixtures/page.tsx'),
       );
+      await fs.mkdir(path.join(probe, 'states'));
+      await fs.writeFile(
+        path.join(probe, 'states/page.tsx'),
+        `import { SectionState } from '@/features/movies/components/homepage-sections';
+export default function States() { return <main><SectionState id="discover" title="Featured film" hero loading /><SectionState id="trending" title="Trending Now" loading /><SectionState id="films" title="Popular Films" loading /><SectionState id="genres" title="Browse by Genre" loading /></main>; }`,
+      );
       api = child(
         path.join(__dirname, 'api-fixture.cjs'),
         [],
@@ -153,6 +159,36 @@ test(
         executablePath: process.env.FRAME_CHROMIUM_EXECUTABLE,
       });
       const page = await browser.newPage();
+      await page.goto(webOrigin);
+      for (const width of [320, 768, 1440]) {
+        await page.setViewportSize({ width, height: 900 });
+        await page.emulateMedia({ reducedMotion: 'reduce' });
+        await page.goto(webOrigin + '/transport-stage12-probe/states');
+        await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+        await expect(page.getByRole('status')).toHaveCount(1);
+        await expect(page.getByRole('main').getByRole('button')).toHaveCount(0);
+        assert.equal(
+          await page.evaluate(
+            () => document.documentElement.scrollWidth <= innerWidth,
+          ),
+          true,
+        );
+        for (const [selector, ratio] of [
+          ['.skeleton-landscape', 16 / 9],
+          ['.skeleton-poster', 2 / 3],
+        ]) {
+          const box = await page.locator(selector).first().boundingBox();
+          assert.ok(
+            box.width > 0 && Math.abs(box.width / box.height - ratio) < 0.03,
+          );
+        }
+        await fs.mkdir(path.join(root, 'tmp/stage33'), { recursive: true });
+        await page.screenshot({
+          path: path.join(root, 'tmp/stage33', width + '-loading.png'),
+          fullPage: true,
+        });
+      }
+      await page.emulateMedia({ reducedMotion: 'no-preference' });
       await page.goto(webOrigin);
       const result = await page.evaluate(async () => {
         const r = await fetch('/api/v1/health?transport=browser&encoded=a%20b');
@@ -451,6 +487,8 @@ test(
     let revision = 1;
     let failure = '';
     let slowDetail = false;
+    let empty = false;
+    let emptyGenres = false;
     const observed = [];
     const provider = [];
     const privateToken = 'synthetic.homepage.private.token';
@@ -483,7 +521,9 @@ test(
             },
           });
         if (url.pathname === '/3/genre/movie/list')
-          return Response.json({ genres: [{ id: 18, name: 'Drama' }] });
+          return Response.json({
+            genres: emptyGenres ? [] : [{ id: 18, name: 'Drama' }],
+          });
         if (url.pathname === '/3/movie/42') {
           if (slowDetail)
             await new Promise((resolve) => setTimeout(resolve, 700));
@@ -496,9 +536,9 @@ test(
         }
         return Response.json({
           page: 1,
-          results: [movie()],
-          total_pages: 1,
-          total_results: 1,
+          results: empty ? [] : [movie()],
+          total_pages: empty ? 0 : 1,
+          total_results: empty ? 0 : 1,
         });
       },
     });
@@ -620,6 +660,35 @@ test(
       await expect(page.locator('#genres:visible')).toContainText(
         'Some movie sources are unavailable',
       );
+      emptyGenres = true;
+      failure = '';
+      await page.reload();
+      await expect(page.locator('#genres:visible')).toContainText(
+        'Genre filters are unavailable',
+      );
+      await expect(
+        page.locator('#genres:visible').getByRole('button'),
+      ).toHaveCount(0);
+      empty = true;
+      for (const width of [320, 768, 1440]) {
+        await page.setViewportSize({ width, height: 900 });
+        await page.reload();
+        await expect(page.locator('#trending:visible')).toContainText(
+          'No trending films',
+        );
+        await expect(page.locator('#films:visible')).toContainText(
+          'No popular films',
+        );
+        await expect(page.locator('#genres:visible')).toContainText(
+          'No movie previews',
+        );
+        assert.equal(
+          await page.evaluate(
+            () => document.documentElement.scrollWidth <= innerWidth,
+          ),
+          true,
+        );
+      }
       failure = 'all';
       await page.reload();
       await expect(page.locator('#films:visible')).toContainText(
@@ -631,11 +700,37 @@ test(
       await expect(page.locator('#acclaimed')).toContainText(
         'Festival & Award Recognition',
       );
+      for (const width of [320, 768, 1440]) {
+        await page.setViewportSize({ width, height: 900 });
+        await expect(page.locator('#trending:visible')).toContainText(
+          'temporarily unavailable',
+        );
+        assert.equal(
+          await page.evaluate(
+            () => document.documentElement.scrollWidth <= innerWidth,
+          ),
+          true,
+        );
+        await fs.mkdir(path.join(root, 'tmp/stage33'), { recursive: true });
+        await page.screenshot({
+          path: path.join(root, 'tmp/stage33', width + '-error.png'),
+          fullPage: true,
+        });
+      }
       await expect(page.getByLabel('TMDB credits')).toBeVisible();
       assert.ok(
         !requests.some((url) => url.startsWith('https://api.themoviedb.org')),
       );
       assert.ok(!requests.some((url) => url.startsWith(apiOrigin)));
+      assert.ok(
+        !requests.some((value) => {
+          const url = new URL(value);
+          return /^\/api\/v1\/(?:movies|genres|people)(?:\/|$)/.test(
+            url.pathname,
+          );
+        }),
+        'browser must not request Catalog metadata, including same-origin routes',
+      );
       assert.deepEqual(errors, []);
       assert.ok(provider.includes('/3/trending/movie/week'));
     } finally {

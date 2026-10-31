@@ -3,16 +3,19 @@ import { MovieRail } from './movie-rail';
 import { GenreBrowser } from './genre-browser';
 import type { HomepageData } from '../data/homepage';
 
+/** Static skeletons avoid motion and interactive loading controls. */
 export function SectionState({
   id,
   title,
   loading = false,
   hero = false,
+  message,
 }: {
   id: string;
   title: string;
   loading?: boolean;
   hero?: boolean;
+  message?: string;
 }) {
   return (
     <section
@@ -27,31 +30,68 @@ export function SectionState({
         ) : (
           <h2 id={`${id}-state-heading`}>{title}</h2>
         )}
-        <p role="status">
+        <p
+          className="rail-description"
+          role={loading && hero ? 'status' : undefined}
+        >
           {loading
-            ? 'Loading film selection…'
-            : 'This film selection is temporarily unavailable.'}
+            ? `Loading ${title.toLowerCase()}...`
+            : (message ??
+              'This film selection is temporarily unavailable. Explore the other collections below.')}
         </p>
-        {loading && (
-          <div
-            className={`skeleton ${hero ? 'loading-hero' : 'aspect-video'}`}
-            aria-hidden="true"
-          />
+        {loading && hero && (
+          <div className="hero-placeholder" aria-hidden="true">
+            <div className="skeleton skeleton-title" />
+            <div className="skeleton skeleton-overview" />
+            <div className="skeleton skeleton-metadata" />
+            <div className="skeleton skeleton-action" />
+          </div>
         )}
       </div>
+      {loading && !hero && (
+        <div
+          aria-hidden="true"
+          className={`section-placeholders ${id === 'films' ? 'carousel-poster' : ''}`}
+        >
+          {Array.from({ length: id === 'genres' ? 6 : 4 }, (_, index) => (
+            <div
+              key={index}
+              className={
+                id === 'genres' ? 'skeleton skeleton-genre' : 'rail-slide'
+              }
+            >
+              {id !== 'genres' && (
+                <>
+                  <div
+                    className={`skeleton ${id === 'films' ? 'skeleton-poster' : 'skeleton-landscape'}`}
+                  />
+                  <div className="skeleton skeleton-caption" />
+                </>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
     </section>
   );
 }
-
 export async function HomepageHero({ data }: { data: HomepageData }) {
   const movie = await data.hero;
-  return movie ? (
-    <Hero movie={movie} />
-  ) : (
-    <SectionState id="discover" title="Featured film unavailable" hero />
+  if (movie) return <Hero movie={movie} />;
+  const source = await data.trending;
+  return (
+    <SectionState
+      id="discover"
+      title="Featured film unavailable"
+      hero
+      message={
+        source.status === 'failure'
+          ? 'The featured film is temporarily unavailable. Explore the other collections below.'
+          : 'No featured film is available in this selection yet. Explore the collections below.'
+      }
+    />
   );
 }
-
 export async function HomepageRail({
   data,
   popular = false,
@@ -64,6 +104,14 @@ export async function HomepageRail({
   const title = popular ? 'Popular Films' : 'Trending Now';
   if (result.status === 'failure')
     return <SectionState id={id} title={title} />;
+  if (!result.data.length)
+    return (
+      <SectionState
+        id={id}
+        title={title}
+        message={`No ${popular ? 'popular' : 'trending'} films are available in this selection yet.`}
+      />
+    );
   return (
     <MovieRail
       id={id}
@@ -77,20 +125,30 @@ export async function HomepageRail({
     />
   );
 }
-
 export async function HomepageGenres({ data }: { data: HomepageData }) {
   const result = await data.genres;
   if (result.status === 'failure')
-    return <SectionState id="genres" title="Browse by Genre" />;
+    return (
+      <SectionState
+        id="genres"
+        title="Browse by Genre"
+        message="Genre browsing is temporarily unavailable. Explore the other collections above."
+      />
+    );
   return (
     <GenreBrowser
       movies={result.data}
       genres={result.choices}
-      description={
-        result.partial
-          ? 'Filter the available subset of this Homepage selection. Some movie sources are unavailable.'
-          : 'Filter this loaded Homepage selection, not the full TMDB catalog.'
-      }
+      description={[
+        !result.data.length
+          ? 'No movie previews are available in this loaded Homepage selection.'
+          : !result.choices.length
+            ? 'Genre filters are unavailable for this selection. Browse the available film previews below.'
+            : 'Filter this loaded Homepage selection, not the full TMDB catalog.',
+        result.partial ? 'Some movie sources are unavailable.' : '',
+      ]
+        .filter(Boolean)
+        .join(' ')}
     />
   );
 }

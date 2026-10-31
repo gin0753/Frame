@@ -164,3 +164,23 @@ it.each(['failure', 'mismatch'] as const)(
     expect(catalog.getMovieDetail).toHaveBeenCalledTimes(1);
   },
 );
+
+it('keeps the preview pool when the genre dictionary succeeds empty', async () => {
+  vi.mocked(catalog.getCatalogGenres).mockResolvedValue({ items: [] });
+  expect(await createHomepageData().genres).toMatchObject({
+    status: 'success',
+    choices: [],
+    data: [{ id: 'tmdb:1' }, { id: 'tmdb:2' }, { id: 'tmdb:3' }],
+    partial: false,
+  });
+});
+it('distinguishes an empty partial pool from total source failure', async () => {
+  vi.mocked(catalog.getTrendingMovies).mockRejectedValue(new Error());
+  vi.mocked(catalog.getPopularMovies).mockResolvedValue(page([]));
+  expect(await createHomepageData().genres).toMatchObject({
+    status: 'empty',
+    data: [],
+    choices: [],
+    partial: true,
+  });
+});

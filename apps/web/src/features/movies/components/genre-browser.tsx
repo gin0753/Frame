@@ -49,24 +49,26 @@ export function GenreBrowser({
         <h2 id="genres-heading">Browse by Genre</h2>
         <p>{description}</p>
       </div>
-      <div
-        className="genre-options"
-        role="group"
-        aria-label="Filter films by genre"
-      >
-        {genres.map((item) => (
-          <button
-            key={item}
-            aria-label={item === 'Science fiction' ? 'Sci-fi' : item}
-            className={cn('genre-filter', genre === item && 'genre-selected')}
-            aria-pressed={genre === item}
-            aria-controls="genre-results"
-            onClick={() => selectGenre(genre === item ? 'All' : item)}
-          >
-            {item === 'Science fiction' ? 'Sci-fi' : item}
-          </button>
-        ))}
-      </div>
+      {genres.length > 0 && (
+        <div
+          className="genre-options"
+          role="group"
+          aria-label="Filter films by genre"
+        >
+          {genres.map((item) => (
+            <button
+              key={item}
+              aria-label={item === 'Science fiction' ? 'Sci-fi' : item}
+              className={cn('genre-filter', genre === item && 'genre-selected')}
+              aria-pressed={genre === item}
+              aria-controls="genre-results"
+              onClick={() => selectGenre(genre === item ? 'All' : item)}
+            >
+              {item === 'Science fiction' ? 'Sci-fi' : item}
+            </button>
+          ))}
+        </div>
+      )}
       <div className="genre-result-heading">
         <p role="status" aria-live="polite">
           {genre === 'All' ? 'All films' : genre}{' '}
@@ -75,13 +77,15 @@ export function GenreBrowser({
             / {filtered.length} {filtered.length === 1 ? 'film' : 'films'}
           </span>
         </p>
-        <button
-          onClick={() => selectGenre('All')}
-          disabled={genre === 'All'}
-          className="reset-filter"
-        >
-          Show all films
-        </button>
+        {genres.length > 0 && (
+          <button
+            onClick={() => selectGenre('All')}
+            disabled={genre === 'All'}
+            className="reset-filter"
+          >
+            Show all films
+          </button>
+        )}
       </div>
       <details ref={results} className="genre-disclosure" open>
         <summary>
@@ -94,13 +98,15 @@ export function GenreBrowser({
           className="genre-results"
           role="region"
           aria-label="Genre film results"
-          tabIndex={0}
+          tabIndex={filtered.length ? 0 : undefined}
         >
           {filtered.length ? (
             filtered.map((movie) => <MovieCard key={movie.id} movie={movie} />)
           ) : (
             <p className="rail-empty">
-              No films in this genre yet. Try another genre.
+              {movies.length === 0
+                ? 'No film previews are available yet.'
+                : 'No films in this genre yet. Try another genre.'}
             </p>
           )}
         </div>
