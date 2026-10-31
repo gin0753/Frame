@@ -4,6 +4,23 @@ import { expect, it } from 'vitest';
 import { GenreBrowser } from './genre-browser';
 import { movieFixtures } from '../data/fixtures';
 
+it('uses supplied dictionary names and communicates loaded preview scope', async () => {
+  const user = userEvent.setup();
+  render(
+    <GenreBrowser
+      movies={[{ ...movieFixtures[0], genres: ['Drama'] }]}
+      genres={['Drama']}
+      description="Filter this loaded Homepage selection, not the full TMDB catalog."
+    />,
+  );
+  expect(
+    screen.queryByRole('button', { name: 'Fantasy' }),
+  ).not.toBeInTheDocument();
+  await user.click(screen.getByRole('button', { name: 'Drama' }));
+  expect(screen.getByRole('status')).toHaveTextContent('Drama / 1 film');
+  expect(screen.getByText(/not the full TMDB catalog/)).toBeVisible();
+});
+
 it('resets the actual row only after the selected films have been committed', async () => {
   const user = userEvent.setup();
   render(<GenreBrowser movies={movieFixtures} />);
@@ -115,7 +132,7 @@ it('filters the selection, announces the count, and resets without moving focus'
 });
 it('allows deselecting a genre and presents a graceful empty state', async () => {
   const user = userEvent.setup();
-  render(<GenreBrowser movies={[]} />);
+  render(<GenreBrowser movies={[]} genres={['Fantasy']} />);
   const filters = screen.getByRole('group', { name: 'Filter films by genre' });
   const fantasy = within(filters).getByRole('button', {
     name: 'Fantasy',

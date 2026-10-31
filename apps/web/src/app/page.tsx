@@ -1,38 +1,49 @@
 import Image from 'next/image';
+import { Suspense } from 'react';
 import { ArrowUpRight } from 'lucide-react';
 import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
 import { Button } from '@/components/ui/button';
-import { Hero } from '@/features/movies/components/hero';
 import { MovieRail } from '@/features/movies/components/movie-rail';
-import { GenreBrowser } from '@/features/movies/components/genre-browser';
-import { fixtureMovieSource } from '@/features/movies/data/fixtures';
+import {
+  HomepageHero,
+  HomepageRail,
+  HomepageGenres,
+  SectionState,
+} from '@/features/movies/components/homepage-sections';
+import { createHomepageData } from '@/features/movies/data/homepage';
+import { movieFixtures } from '@/features/movies/data/fixtures';
+// Even an unavailable build-time API must not freeze an outage into the Homepage.
+export const dynamic = 'force-dynamic';
 export default async function Home() {
-  const movies = await fixtureMovieSource.listPreviews();
-  const featured = movies.find((movie) => movie.id === 'charge');
-  const popular = [...movies.slice(2), ...movies.slice(0, 2)];
-  const acclaimed = movies.filter((movie) => movie.recognition).reverse();
+  const data = createHomepageData();
+  const acclaimed = movieFixtures
+    .filter((movie) => 'recognition' in movie)
+    .reverse();
   return (
     <>
       <Header />
       <main id="main">
-        {featured && <Hero movie={featured} />}
+        <Suspense
+          fallback={
+            <SectionState id="discover" title="Featured film" hero loading />
+          }
+        >
+          <HomepageHero data={data} />
+        </Suspense>
         <div className="discovery-content">
-          <MovieRail
-            id="trending"
-            title="Trending Now"
-            eyebrow="THE DISCOVERY EDIT"
-            description="A curated selection from the open-film archive."
-            movies={movies}
-          />
-          <MovieRail
-            id="films"
-            title="Popular Films"
-            eyebrow="WORTH YOUR TIME"
-            description="Curated favourites, not a live popularity ranking."
-            movies={popular}
-            variant="poster"
-          />
+          <Suspense
+            fallback={
+              <SectionState id="trending" title="Trending Now" loading />
+            }
+          >
+            <HomepageRail data={data} />
+          </Suspense>
+          <Suspense
+            fallback={<SectionState id="films" title="Popular Films" loading />}
+          >
+            <HomepageRail data={data} popular />
+          </Suspense>
           <section
             id="collections"
             className="collection-section container-shell"
@@ -71,13 +82,19 @@ export default async function Home() {
           </section>
           <MovieRail
             id="acclaimed"
-            title="Critically Acclaimed"
+            title="Festival & Award Recognition"
             eyebrow="FESTIVAL SPOTLIGHT"
-            description="An award winner and festival selections, with recognition sources."
+            description="Blender open films: an award winner and festival selections, with recognition sources."
             movies={acclaimed}
             recognition
           />
-          <GenreBrowser movies={movies} />
+          <Suspense
+            fallback={
+              <SectionState id="genres" title="Browse by Genre" loading />
+            }
+          >
+            <HomepageGenres data={data} />
+          </Suspense>
         </div>
       </main>
       <Footer />

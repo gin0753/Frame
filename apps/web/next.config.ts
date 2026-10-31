@@ -4,6 +4,15 @@ import { localApiRewrites } from './config/local-api-rewrites.ts';
 
 apiOrigin(process.env.FRAME_API_ORIGIN);
 const nextConfig: NextConfig = {
+  images: {
+    remotePatterns: ['w500', 'w1280'].map((size) => ({
+      protocol: 'https' as const,
+      hostname: 'image.tmdb.org',
+      port: '',
+      pathname: `/t/p/${size}/*`,
+      search: '',
+    })),
+  },
   experimental: { proxyTimeout: 3000 },
   async rewrites() {
     return {

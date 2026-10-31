@@ -26,7 +26,7 @@ export function Hero({ movie }: { movie: MoviePreview }) {
         {movie.synopsis && <p className="hero-overview">{movie.synopsis}</p>}
         <div className="hero-metadata">
           {movie.year !== null && <span>{movie.year}</span>}
-          <span>{movie.genres.join(' / ')}</span>
+          {movie.genres.length > 0 && <span>{movie.genres.join(' / ')}</span>}
           {runtime && <span>{runtime}</span>}
         </div>
         <Button variant="light" asChild className="hero-button max-md:min-h-12">

@@ -55,7 +55,7 @@ export function toMoviePreview(
       genres: summary.genreIds.flatMap((id) =>
         dictionary.has(id) ? [dictionary.get(id)!] : [],
       ),
-      synopsis: summary.overview ?? '',
+      synopsis: enrichment?.overview ?? summary.overview ?? '',
       runtimeSeconds: enrichment?.runtimeMinutes
         ? enrichment.runtimeMinutes * 60
         : null,

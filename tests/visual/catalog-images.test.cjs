@@ -126,6 +126,11 @@ async function isolatedProject() {
     await fs.cp(path.join(webDirectory, name), path.join(directory, name), {
       recursive: true,
     });
+  // Keep the approved six-fixture baseline independent of live Homepage sources.
+  await fs.copyFile(
+    path.join(__dirname, 'fixture-homepage.txt'),
+    path.join(directory, 'src/app/page.tsx'),
+  );
   for (const name of [
     'package.json',
     'tsconfig.json',

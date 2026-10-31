@@ -2,20 +2,26 @@
 
 NestJS Express API with the PostgreSQL foundation. `src/main.ts` creates the application and bootstraps the listener; `AppModule` imports `HealthModule`, `DatabaseModule` and `CatalogModule` (which imports the internal `TmdbModule`). Runtime configuration and sanitized errors remain local to this application. Authentication remains unimplemented; Stage 2.2 catalog reads are documented below.
 
+## Stage 3.2 Homepage consumer
+
+The web Homepage now calls the existing server-only Catalog consumer: one weekly Trending/page-one read shared by Hero and Trending, Popular page one, and Genres concurrently. Only the selected Hero receives one detail enrichment; transient failure or mismatched detail retains summary metadata. The generic consumer error cannot reliably identify a definitive movie 404, so no alternate detail request is attempted. Hero detail does not block the rails. Genre filtering describes the distinct loaded Homepage preview pool; Spring and the verified Blender recognition rail remain static editorial content.
+
+No public API, provider deadline, cache policy or credential boundary changed. Next uses request-time rendering and no-store reads; provider images remain unoptimized. The production Homepage test in `tests/transport/transport.test.cjs` uses real Nest and production Next with a synthetic provider, not live TMDB. Historical Stage 2 descriptions below record the implementation at those stages.
+
 ## Internal TMDB provider (Stage 2.1)
 
 `src/catalog/tmdb` exports a Nest-owned `TmdbAdapter`, with no controller. It supports daily/weekly movie trending, popular movies (page 1–500), movie genres and detail by positive int32 TMDB movie ID. Language is an explicit ISO two-letter language with optional uppercase country, default `en-US`. Popular forwards page; trending currently forwards language only, matching the parameters documented in the current trending reference. Expanded trending pagination must be verified before the Stage 2.2 public paginated contract. No search/discover, MoviePreview adaptation, public DTO or OpenAPI change is added. Internal schemas deliberately project only movie identity/title, page counts and genre identity/name; other provider fields are discarded. They are not complete FRAME movie DTOs.
 
-Configuration follows the API's explicit inherited-environment convention; no automatic dotenv loading is added:
+Runtime configuration uses inherited environment variables. The explicit development command `pnpm run api:dev` also loads the optional `apps/api/.env.tmdb.local` through Node's environment-file support, preserving the existing build/Prisma prerequisites and `tsx watch` source reload workflow. A missing file is allowed; TMDB stays disabled unless explicitly enabled. Restart the command after editing the environment file. Direct startup and deployment do not implicitly load it.
 
 - `TMDB_ENABLED`: absent/`false` disables provider calls and requires no token. Exactly `true` enables the adapter and validates credentials during Nest startup. Any other value fails safely.
 - `TMDB_READ_ACCESS_TOKEN`: private TMDB **API Read Access Token**, required when enabled. Header-safe bearer syntax is checked; authenticity requires an authorized provider request. Never use `NEXT_PUBLIC_*`, a query credential, an actual token in a shell command/history, or a tracked file. A token supplied while disabled is ignored.
 
-An operator may supply these variables through their private environment or an ignored root `.env.tmdb.local`. The example contains placeholders only. If using that ignored file, run `pnpm run api:build`, then from the repository root:
+Keep private TMDB settings in the Git-ignored `apps/api/.env.tmdb.local`, or supply them through the launching environment. Set `TMDB_ENABLED=true` and provide `TMDB_READ_ACCESS_TOKEN` privately to opt in. No credential file is created by the development command. For an explicit compiled startup or smoke check, run `pnpm run api:build`, then from the repository root:
 
 ```sh
-node --env-file=.env.tmdb.local apps/api/dist/main.js
-node --env-file=.env.tmdb.local apps/api/scripts/tmdb-smoke.cjs
+node --env-file=apps/api/.env.tmdb.local apps/api/dist/main.js
+node --env-file=apps/api/.env.tmdb.local apps/api/scripts/tmdb-smoke.cjs
 ```
 
 Node gives inherited variables precedence; inspect their names/target privately before launch. For an already-configured environment, `pnpm --filter @frame/api run tmdb:smoke` builds then runs the same smoke script. Smoke explicitly enables the adapter without changing application defaults. Missing credentials prints `REAL TMDB HTTP: NOT RUN — credentials unavailable` and exits 2. A configured Stage 2.2 smoke run makes five sequential requests (weekly trending, popular page 1, genres, English movie 11/Star Wars with credits/videos, image configuration); it validates provider structures, normalized public outputs and the known detail identity, and logs only aggregate pass/fail. No real bodies, artwork or credentials are saved. Failure exits 1 with generic diagnostics. Do not mistake deterministic synthetic tests for live TMDB proof.

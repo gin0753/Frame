@@ -6,9 +6,15 @@ import { moviesByGenre } from '../presentation';
 import { MovieCard } from './movie-card';
 import { cn } from '@/lib/utils';
 
-const genres = ['Science fiction', 'Fantasy', 'Adventure', 'Comedy'];
-
-export function GenreBrowser({ movies }: { movies: readonly MoviePreview[] }) {
+export function GenreBrowser({
+  movies,
+  genres = [...new Set(movies.flatMap((movie) => movie.genres))],
+  description = 'Find a film for your mood.',
+}: {
+  movies: readonly MoviePreview[];
+  genres?: readonly string[];
+  description?: string;
+}) {
   const [genre, setGenre] = useState('All');
   const results = useRef<HTMLDetailsElement>(null);
   const resultsViewport = useRef<HTMLDivElement>(null);
@@ -41,7 +47,7 @@ export function GenreBrowser({ movies }: { movies: readonly MoviePreview[] }) {
     >
       <div className="genre-intro">
         <h2 id="genres-heading">Browse by Genre</h2>
-        <p>Find a film for your mood.</p>
+        <p>{description}</p>
       </div>
       <div
         className="genre-options"
@@ -77,7 +83,7 @@ export function GenreBrowser({ movies }: { movies: readonly MoviePreview[] }) {
           Show all films
         </button>
       </div>
-      <details ref={results} className="genre-disclosure">
+      <details ref={results} className="genre-disclosure" open>
         <summary>
           View selected films{' '}
           <ChevronDown className="size-4" aria-hidden="true" />

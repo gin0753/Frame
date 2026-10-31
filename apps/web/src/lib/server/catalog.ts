@@ -12,7 +12,7 @@ import type {
 } from '@frame/contracts';
 import { apiOrigin } from '../../../config/api-origin';
 
-// Fixed public reads only; no cookies, caller-controlled origin or Homepage integration.
+// Fixed public reads only; no cookies or caller-controlled origin.
 async function readCatalog<T>(
   path: string,
   schema: { parse(value: unknown): T },

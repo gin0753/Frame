@@ -3,6 +3,31 @@ import { expect, it } from 'vitest';
 import { MovieCard } from './movie-card';
 import { Hero } from './hero';
 import { movieFixtures } from '../data/fixtures';
+it('renders a live destination without empty metadata or fixture recognition', () => {
+  const movie = {
+    ...movieFixtures[0],
+    id: 'tmdb:42',
+    title: 'Live movie',
+    year: null,
+    genres: [],
+    synopsis: '',
+    runtimeSeconds: null,
+    exploreUrl: 'https://www.themoviedb.org/movie/42',
+    destinationLabel: 'TMDB' as const,
+  };
+  const { container } = render(
+    <>
+      <Hero movie={movie} />
+      <MovieCard movie={movie} recognition />
+    </>,
+  );
+  expect(
+    screen.getAllByRole('link', { name: 'Explore Live movie on TMDB' }),
+  ).toHaveLength(2);
+  expect(container.querySelector('.hero-metadata')?.children).toHaveLength(0);
+  expect(container.querySelector('.movie-genres')).toBeNull();
+  expect(container.querySelector('.recognition-link')).toBeNull();
+});
 it.each([movieFixtures[0], movieFixtures[4]])(
   'preserves the real $title title and official destination in the hero',
   (movie) => {
