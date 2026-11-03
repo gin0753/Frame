@@ -198,7 +198,7 @@
     font-size: 0.75rem;
     letter-spacing: 0.06em;
   }
-  .cinema-hero h1 {
+  .cinema-hero :is(h1, .hero-title) {
     font-size: clamp(2.5rem, 3.9vw, 3.5rem);
     font-weight: 600;
     line-height: 1.12;
@@ -788,7 +788,7 @@
     bottom: auto;
     height: var(--mobile-hero-image-height);
   }
-  .cinema-hero h1 {
+  .cinema-hero :is(h1, .hero-title) {
     font-size: clamp(2rem, 10vw, 2.5rem);
     max-width: 100%;
   }
@@ -1006,4 +1006,99 @@
   height: 3rem;
   margin-top: 1.5rem;
   border-radius: 6px;
+}
+/* Live Hero only; the static fixture Hero retains its approved layout. */
+.hero-carousel {
+  touch-action: pan-y pinch-zoom;
+}
+.hero-carousel .hero-frame {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  background: var(--surface);
+  transition: opacity 700ms ease-in-out;
+}
+.hero-carousel .hero-frame-active {
+  opacity: 1;
+}
+.hero-carousel .hero-copy-slot {
+  display: grid;
+}
+.hero-carousel .hero-content {
+  grid-area: 1 / 1;
+  opacity: 1;
+  transition: opacity 700ms ease-out;
+}
+.hero-carousel .hero-content-inactive {
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+.hero-carousel .hero-overview {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  overflow: hidden;
+}
+.hero-carousel .hero-title {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  overflow: hidden;
+}
+.hero-carousel-controls {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.25rem;
+  margin-top: 1.5rem;
+}
+.hero-pagination {
+  display: flex;
+}
+.hero-dot,
+.hero-carousel-controls .hero-playback {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  border-radius: 6px;
+  color: var(--text-secondary);
+}
+.hero-dot span {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--text-secondary);
+}
+.hero-dot[aria-current='true'] span {
+  width: 18px;
+  background: var(--accent);
+}
+.hero-dot:hover span {
+  background: var(--text-primary);
+}
+.hero-dot[aria-current='true']:hover span {
+  background: var(--accent);
+}
+.hero-carousel-controls .hero-playback svg {
+  width: 14px;
+  height: 14px;
+}
+.hero-carousel[data-motion='reduced'] .hero-frame {
+  transition: none;
+}
+.hero-carousel[data-motion='reduced'] .hero-content {
+  transition: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero-carousel .hero-frame {
+    transition: none;
+  }
+  .hero-carousel .hero-content {
+    transition: none;
+  }
 }

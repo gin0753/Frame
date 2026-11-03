@@ -489,18 +489,19 @@ test(
     let slowDetail = false;
     let empty = false;
     let emptyGenres = false;
+    let movieCount = 1;
     const observed = [];
     const provider = [];
     const privateToken = 'synthetic.homepage.private.token';
-    const movie = () => ({
-      id: 42,
-      title: `Synthetic live ${revision}`,
+    const movie = (id = 42) => ({
+      id,
+      title: `Synthetic live ${revision}${id === 42 ? '' : ` slide ${id - 41}`}`,
       vote_count: 0,
       vote_average: 0,
       genre_ids: [18],
       release_date: '',
       poster_path: null,
-      backdrop_path: '/synthetic.jpg',
+      backdrop_path: `/synthetic${id}.jpg`,
       overview: 'Synthetic summary',
     });
     const fake = new TmdbAdapter({
@@ -536,9 +537,13 @@ test(
         }
         return Response.json({
           page: 1,
-          results: empty ? [] : [movie()],
+          results: empty
+            ? []
+            : Array.from({ length: movieCount }, (_, index) =>
+                movie(42 + index),
+              ),
           total_pages: empty ? 0 : 1,
-          total_results: empty ? 0 : 1,
+          total_results: empty ? 0 : movieCount,
         });
       },
     });
@@ -646,6 +651,376 @@ test(
       assert.ok(!streamed.includes(privateToken));
       assert.ok(!streamed.includes(apiOrigin));
       slowDetail = false;
+      // Multi-film Hero: real production RSC composition, synthetic provider/artwork.
+      movieCount = 9;
+      await page.unroute('https://image.tmdb.org/**');
+      const artwork = await Promise.all(
+        [
+          'charge',
+          'spring',
+          'sintel',
+          'tears-of-steel',
+          'cosmos-laundromat',
+        ].map((name) =>
+          fs.readFile(
+            path.join(
+              root,
+              'apps/web/public/images/films',
+              name + '-backdrop.webp',
+            ),
+          ),
+        ),
+      );
+      const heldArtwork = new Map();
+      const delayedArtwork = new Set([43, 45, 46]);
+      const fulfillArtwork = (route, id) =>
+        route.fulfill({
+          contentType: 'image/webp',
+          body: artwork[(id - 42) % 5],
+        });
+      await page.route('https://image.tmdb.org/**', (route) => {
+        const id = Number(
+          route
+            .request()
+            .url()
+            .match(/synthetic(\d+)/)?.[1] ?? 42,
+        );
+        if (id === 44) return route.abort();
+        if (delayedArtwork.has(id)) {
+          heldArtwork.set(id, route);
+          return;
+        }
+        return fulfillArtwork(route, id);
+      });
+      const releaseArtwork = async (id) => {
+        await expect.poll(() => heldArtwork.has(id)).toBe(true);
+        delayedArtwork.delete(id);
+        await fulfillArtwork(heldArtwork.get(id), id);
+        heldArtwork.delete(id);
+      };
+      const protocol = await page.context().newCDPSession(page);
+      await protocol.send('Network.enable');
+      const imageRequests = [];
+      protocol.on('Network.requestWillBeSent', (event) => {
+        if (/synthetic4[2-6]\.jpg/.test(event.request.url))
+          imageRequests.push({
+            url: event.request.url,
+            priority: event.request.initialPriority,
+          });
+      });
+      const catalogBeforeCarousel = observed.length;
+      await page.reload({ waitUntil: 'domcontentloaded' });
+      const hero = page.getByRole('region', {
+        name: 'Featured films',
+        exact: true,
+      });
+      await expect(hero).toBeVisible();
+      await hero
+        .getByRole('button', { name: /^Show featured film 2 of/ })
+        .focus();
+      await page.keyboard.press('Shift'); // Protect the initial network/visual checks with keyboard interaction.
+      await hero.hover();
+      await expect(hero.locator('img')).toHaveCount(2);
+      assert.equal(new Set(imageRequests.map((item) => item.url)).size, 2);
+      assert.equal(observed.length - catalogBeforeCarousel, 4);
+      assert.equal(
+        observed
+          .slice(catalogBeforeCarousel)
+          .filter((url) => url.startsWith('/api/v1/movies/trending')).length,
+        1,
+      );
+      const metadataAtCarousel = observed.length;
+      assert.ok(
+        imageRequests.find((item) => item.url.includes('synthetic42.jpg'))
+          ?.priority === 'High',
+      );
+      await expect(
+        page.locator('link[rel="preload"][as="image"][href*="synthetic"]'),
+      ).toHaveCount(1);
+      assert.equal(
+        await hero
+          .locator('.hero-frame')
+          .first()
+          .evaluate((element) => getComputedStyle(element).transitionDuration),
+        '0.7s',
+      );
+      await hero.evaluate((element) =>
+        element.addEventListener('transitionend', (event) => {
+          if (
+            event.target.classList.contains('hero-frame') &&
+            event.propertyName === 'opacity'
+          )
+            element.dataset.transitionObserved = String(event.elapsedTime);
+        }),
+      );
+      const selectHero = (index) =>
+        hero.getByRole('button', {
+          name: new RegExp(`^Show featured film ${index + 1} of`),
+        });
+      const nextHero = selectHero(1);
+      await expect(
+        hero.getByRole('button', { name: /^Show featured film/ }),
+      ).toHaveCount(5);
+      await expect(
+        hero.getByRole('button', { name: /Previous|Next/ }),
+      ).toHaveCount(0);
+      await nextHero.focus();
+      await page.keyboard.press('Enter');
+      // A slow destination keeps the displayed title, CTA and active dot on film one.
+      await expect(hero.getByRole('heading', { level: 1 })).toHaveText(
+        'Synthetic live 2',
+      );
+      await expect(selectHero(0)).toHaveAttribute('aria-current', 'true');
+      await expect(hero.getByRole('link')).toHaveAttribute(
+        'href',
+        'https://www.themoviedb.org/movie/42',
+      );
+      await expect(hero.locator('.hero-frame-active img')).toHaveAttribute(
+        'src',
+        /synthetic42\.jpg/,
+      );
+      await releaseArtwork(43);
+      await expect(hero.getByRole('heading', { level: 1 })).toHaveText(
+        'Synthetic live 2 slide 2',
+      );
+      await expect(nextHero).toBeFocused();
+      await expect(hero.getByRole('link')).toHaveCount(1);
+      await expect(hero.getByRole('link')).toHaveAttribute(
+        'href',
+        'https://www.themoviedb.org/movie/43',
+      );
+      await expect
+        .poll(() =>
+          hero
+            .locator('.hero-frame-active')
+            .evaluate((element) => getComputedStyle(element).opacity),
+        )
+        .toBe('1');
+      await expect(hero).toHaveAttribute('data-transition-observed', '0.7');
+      await fs.mkdir(path.join(root, 'tmp/stage34a'), { recursive: true });
+      await page.screenshot({
+        path: path.join(root, 'tmp/stage34a/desktop.png'),
+        fullPage: true,
+      });
+      const beforeHeight = (await hero.boundingBox()).height;
+      await selectHero(2).click();
+      await expect(hero.getByRole('heading', { level: 1 })).toHaveText(
+        'Synthetic live 2 slide 3',
+      );
+      await expect(
+        hero.locator('.hero-frame-active [data-image-unavailable]'),
+      ).toBeVisible();
+      assert.ok(Math.abs((await hero.boundingBox()).height - beforeHeight) < 1);
+      await selectHero(3).click();
+      await selectHero(4).click();
+      await releaseArtwork(45); // superseded completion must not expose film four
+      await expect(hero.getByRole('heading', { level: 1 })).toHaveText(
+        'Synthetic live 2 slide 3',
+      );
+      await expect(selectHero(2)).toHaveAttribute('aria-current', 'true');
+      await releaseArtwork(46);
+      await expect(hero.getByRole('heading', { level: 1 })).toHaveText(
+        'Synthetic live 2 slide 5',
+      );
+      await expect(selectHero(4)).toHaveAttribute('aria-current', 'true');
+      for (const index of [0, 4, 1, 3, 0]) await selectHero(index).click();
+      await expect(hero.getByRole('heading', { level: 1 })).toHaveText(
+        'Synthetic live 2',
+      );
+      await selectHero(4).focus();
+      await page.keyboard.press('Tab');
+      await expect(
+        hero.getByRole('button', { name: 'Pause featured films' }),
+      ).toBeFocused();
+      await page.keyboard.press('Enter');
+      await expect(
+        hero.getByRole('button', { name: 'Play featured films' }),
+      ).toBeFocused();
+      await page.keyboard.press('Enter');
+      await expect(
+        hero.getByRole('button', { name: 'Pause featured films' }),
+      ).toBeFocused();
+      // Deterministic browser clock: no native autoplay timer is active while keyboard focus protects the Hero.
+      const heroInterval = 5000;
+      const autoplayClock = new Date();
+      await page.clock.install({ time: autoplayClock });
+      await page.clock.pauseAt(new Date(autoplayClock.getTime() + 100));
+      let expectedHeroIndex = 0;
+      const expectHeroIndex = () =>
+        expect(hero.getByRole('heading', { level: 1 })).toHaveText(
+          expectedHeroIndex === 0
+            ? 'Synthetic live 2'
+            : `Synthetic live 2 slide ${expectedHeroIndex + 1}`,
+        );
+      await page.clock.runFor(12000);
+      await expectHeroIndex(); // Keyboard focus remains protected even with the pointer inside.
+      await hero.click({ position: { x: 10, y: 110 } }); // Ordinary pointer activation releases keyboard protection, without forced blur.
+      for (const target of [
+        hero,
+        hero.getByRole('heading', { level: 1 }),
+        nextHero,
+      ]) {
+        await target.hover();
+        await page.clock.runFor(heroInterval - 1);
+        await expectHeroIndex();
+        await page.clock.runFor(1);
+        expectedHeroIndex = (expectedHeroIndex + 1) % 5;
+        await expectHeroIndex();
+      }
+      await page.clock.runFor(heroInterval - 1000);
+      const mouseDot = selectHero((expectedHeroIndex + 1) % 5);
+      await mouseDot.click();
+      expectedHeroIndex = (expectedHeroIndex + 1) % 5;
+      await expectHeroIndex();
+      await expect(mouseDot).toBeFocused();
+      await page.clock.runFor(heroInterval - 1);
+      await expectHeroIndex();
+      await page.clock.runFor(1);
+      expectedHeroIndex = (expectedHeroIndex + 1) % 5;
+      await expectHeroIndex();
+      await expect(mouseDot).toBeFocused(); // Mouse-created focus must not prevent autoplay.
+      await page.clock.runFor(heroInterval - 1000);
+      await selectHero(expectedHeroIndex).click(); // Active dot must not reset the countdown.
+      await page.clock.runFor(999);
+      await expectHeroIndex();
+      await page.clock.runFor(1);
+      expectedHeroIndex = (expectedHeroIndex + 1) % 5;
+      await expectHeroIndex();
+      await mouseDot.press('ArrowRight'); // Keyboard interaction now protects the same focused control.
+      await page.clock.runFor(12000);
+      await expectHeroIndex();
+      await hero.getByRole('button', { name: 'Pause featured films' }).click();
+      await page.clock.runFor(12000);
+      await expectHeroIndex();
+      await hero.getByRole('button', { name: 'Play featured films' }).click();
+      await page.clock.runFor(heroInterval - 1);
+      await expectHeroIndex();
+      await page.clock.runFor(1);
+      expectedHeroIndex = (expectedHeroIndex + 1) % 5;
+      await expectHeroIndex();
+      await hero.getByRole('button', { name: 'Pause featured films' }).click();
+      await page.clock.resume();
+      assert.equal(
+        imageRequests.length,
+        5,
+        'visited artwork gets one attempt per film',
+      );
+      assert.equal(new Set(imageRequests.map(({ url }) => url)).size, 5);
+      assert.equal(
+        observed.length,
+        metadataAtCarousel,
+        'manual carousel moves must not request Catalog metadata',
+      );
+      await page.emulateMedia({ reducedMotion: 'reduce' });
+      await page.reload();
+      await expect(
+        hero.getByRole('button', { name: 'Play featured films' }),
+      ).toBeVisible();
+      assert.ok(
+        await hero
+          .locator('.hero-frame')
+          .first()
+          .evaluate(
+            (element) =>
+              parseFloat(getComputedStyle(element).transitionDuration) <= 0.001,
+          ),
+        'Reduced Motion transitions must be effectively motionless',
+      );
+      const metadataAfterReload = observed.length;
+      for (const width of [320, 768, 1440]) {
+        await page.setViewportSize({ width, height: 900 });
+        assert.equal(
+          await page.evaluate(
+            () => document.documentElement.scrollWidth <= innerWidth,
+          ),
+          true,
+        );
+        const controls = await hero
+          .locator('.hero-carousel-controls')
+          .boundingBox();
+        const content = await hero
+          .locator('.hero-content:not([inert])')
+          .boundingBox();
+        const dots = await hero.locator('.hero-pagination').boundingBox();
+        const heroBox = await hero.boundingBox();
+        assert.ok(
+          controls.y >= content.y + content.height,
+          'controls must not overlap content',
+        );
+        const playback = await hero.locator('.hero-playback').boundingBox();
+        assert.ok(
+          dots.x >= controls.x &&
+            Math.abs(
+              playback.x + playback.width - (controls.x + controls.width),
+            ) < 1 &&
+            controls.x + controls.width <= width,
+          'pagination and playback must align to the right container edge',
+        );
+        assert.ok(
+          controls.y + controls.height <= heroBox.y + heroBox.height,
+          'controls stay inside Hero',
+        );
+        await selectHero(0).focus();
+        await page.keyboard.press('Shift');
+        assert.ok(
+          await selectHero(0).evaluate(
+            (element) =>
+              element.matches(':focus-visible') &&
+              getComputedStyle(element).outlineStyle !== 'none',
+          ),
+          'keyboard dot focus is visible',
+        );
+        await expect(hero.getByRole('heading', { level: 1 })).toHaveCount(1);
+        await expect(hero.getByRole('link')).toHaveCount(1);
+        for (const button of await hero.getByRole('button').all()) {
+          const box = await button.boundingBox();
+          assert.ok(box.width >= 44 && box.height >= 44);
+        }
+      }
+      await page.setViewportSize({ width: 393, height: 900 });
+      await page.evaluate(() => scrollTo(0, 0));
+      await protocol.send('Emulation.setTouchEmulationEnabled', {
+        enabled: true,
+      });
+      const touch = async (type, x, y) =>
+        protocol.send('Input.dispatchTouchEvent', {
+          type,
+          touchPoints: type === 'touchEnd' ? [] : [{ x, y }],
+        });
+      await touch('touchStart', 280, 170);
+      await touch('touchMove', 80, 172);
+      await touch('touchEnd', 80, 172);
+      await expect(hero.getByRole('heading', { level: 1 })).toHaveText(
+        'Synthetic live 2 slide 2',
+      );
+      await page.screenshot({
+        path: path.join(root, 'tmp/stage34a/mobile.png'),
+        fullPage: true,
+      });
+      await touch('touchStart', 180, 230);
+      await touch('touchMove', 184, 80);
+      await touch('touchEnd', 184, 80);
+      await expect.poll(() => page.evaluate(() => scrollY)).toBeGreaterThan(0);
+      await expect(hero.getByRole('heading', { level: 1 })).toHaveText(
+        'Synthetic live 2 slide 2',
+      );
+      assert.equal(
+        observed.length,
+        metadataAfterReload,
+        'touch and responsive interaction must not request Catalog metadata',
+      );
+      console.log(
+        JSON.stringify({
+          heroInitialRequests: imageRequests.slice(0, 2),
+          heroInitialPreloads: 1,
+          carouselWidths: [320, 768, 1440],
+          touchSwipe: 'verified',
+          verticalScroll: 'verified',
+        }),
+      );
+      await protocol.detach();
+      await page.emulateMedia({ reducedMotion: 'no-preference' });
+      movieCount = 1;
       failure = 'trending';
       await page.reload();
       await expect(page.locator('#discover:visible')).toContainText(

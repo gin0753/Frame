@@ -18,23 +18,23 @@ export function selectHomepage(
   popularItems: readonly MovieSummary[],
 ) {
   const trending = distinctMovies(trendingItems);
-  const hero = trending.find((item) => {
-    const movie = toMoviePreview(item, [], movieImageFallbacks).movie;
-    return (
-      movie.backdrop.src !== movieImageFallbacks.backdrop.src &&
-      movie.exploreUrl === `https://www.themoviedb.org/movie/${item.id}`
-    );
-  });
-  const withoutHero = trending.filter(({ id }) => id !== hero?.id);
+  const heroes = trending
+    .filter((item) => {
+      const movie = toMoviePreview(item, [], movieImageFallbacks).movie;
+      return (
+        movie.backdrop.src !== movieImageFallbacks.backdrop.src &&
+        movie.exploreUrl === `https://www.themoviedb.org/movie/${item.id}`
+      );
+    })
+    .slice(0, 5);
+  const heroIds = new Set(heroes.map(({ id }) => id));
+  const withoutHero = trending.filter(({ id }) => !heroIds.has(id));
   const trendingRail = withoutHero.length >= 4 ? withoutHero : trending;
-  const excluded = new Set([
-    ...trendingRail.map(({ id }) => id),
-    ...(hero ? [hero.id] : []),
-  ]);
+  const excluded = new Set([...trendingRail.map(({ id }) => id), ...heroIds]);
   const popular = distinctMovies(popularItems);
   const unique = popular.filter(({ id }) => !excluded.has(id));
   return {
-    hero,
+    heroes,
     trending: trendingRail,
     popular: unique.length >= 4 ? unique : popular,
   };

@@ -10,7 +10,7 @@ import {
 import type { HomepageData } from '../data/homepage';
 import { movieFixtures } from '../data/fixtures';
 const data = (overrides: Partial<HomepageData> = {}): HomepageData => ({
-  hero: Promise.resolve(null),
+  hero: Promise.resolve([]),
   trending: Promise.resolve({ status: 'empty', data: [] }),
   popular: Promise.resolve({ status: 'empty', data: [] }),
   genres: Promise.resolve({
@@ -128,4 +128,22 @@ it('distinguishes genre failure from empty previews', async () => {
     }),
   );
   expect(screen.getByText(/temporarily unavailable/)).toBeVisible();
+});
+
+it('keeps a truthful empty featured state when Trending succeeds without eligible Hero artwork', async () => {
+  const { container } = render(
+    await HomepageHero({
+      data: data({
+        trending: Promise.resolve({
+          status: 'success',
+          data: movieFixtures.slice(0, 1),
+        }),
+      }),
+    }),
+  );
+  expect(screen.getByText(/No featured film/)).toBeVisible();
+  expect(screen.queryByText(/temporarily unavailable/)).not.toBeInTheDocument();
+  expect(container.querySelector('#discover')).toBeTruthy();
+  expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1);
+  expect(screen.queryByRole('button')).not.toBeInTheDocument();
 });

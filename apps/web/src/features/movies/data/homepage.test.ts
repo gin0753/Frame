@@ -69,7 +69,7 @@ it('settles a total outage without rejecting or substituting fixtures', async ()
   expect(await data.trending).toEqual({ status: 'failure' });
   expect(await data.popular).toEqual({ status: 'failure' });
   expect(await data.genres).toEqual({ status: 'failure' });
-  expect(await data.hero).toBeNull();
+  expect(await data.hero).toEqual([]);
   expect(catalog.getMovieDetail).not.toHaveBeenCalled();
 });
 it('shares one trending read, enriches only hero, and forms a distinct live genre pool', async () => {
@@ -77,11 +77,14 @@ it('shares one trending read, enriches only hero, and forms a distinct live genr
   expect(catalog.getTrendingMovies).toHaveBeenCalledTimes(1);
   expect(catalog.getPopularMovies).toHaveBeenCalledTimes(1);
   expect(catalog.getCatalogGenres).toHaveBeenCalledTimes(1);
-  expect(await data.hero).toMatchObject({
-    synopsis: 'Detail overview',
-    runtimeSeconds: 5400,
-    destinationLabel: 'TMDB',
-  });
+  expect(await data.hero).toMatchObject([
+    {
+      synopsis: 'Detail overview',
+      runtimeSeconds: 5400,
+      destinationLabel: 'TMDB',
+    },
+    { synopsis: 'Summary', runtimeSeconds: null },
+  ]);
   expect(await data.genres).toMatchObject({
     choices: ['Drama'],
     data: [{ id: 'tmdb:1' }, { id: 'tmdb:2' }, { id: 'tmdb:3' }],
@@ -112,7 +115,7 @@ it.each(['getTrendingMovies', 'getPopularMovies', 'getCatalogGenres'] as const)(
       expect(g.status).toBe('failure');
       if (t.status !== 'failure') expect(t.data[0].genres).toEqual([]);
     } else expect(g).toMatchObject({ status: 'success', partial: true });
-    if (method === 'getTrendingMovies') expect(h).toBeNull();
+    if (method === 'getTrendingMovies') expect(h).toEqual([]);
   },
 );
 it('settles empty sources without details or fabricated fixture content', async () => {
@@ -121,7 +124,7 @@ it('settles empty sources without details or fabricated fixture content', async 
   const data = createHomepageData();
   expect(await data.trending).toEqual({ status: 'empty', data: [] });
   expect(await data.popular).toEqual({ status: 'empty', data: [] });
-  expect(await data.hero).toBeNull();
+  expect(await data.hero).toEqual([]);
   expect(await data.genres).toMatchObject({ status: 'empty', data: [] });
   expect(catalog.getMovieDetail).not.toHaveBeenCalled();
 });
@@ -143,7 +146,7 @@ it('renders rails without waiting for hero detail and trending without waiting f
   resolvePopular(page([movie(3)]));
   expect((await data.popular).status).toBe('success');
   resolveDetail(detail);
-  expect((await data.hero)?.id).toBe('tmdb:1');
+  expect((await data.hero)[0]?.id).toBe('tmdb:1');
 });
 it.each(['failure', 'mismatch'] as const)(
   'keeps summary for detail %s without retry',
@@ -157,7 +160,7 @@ it.each(['failure', 'mismatch'] as const)(
         ...detail,
         id: 99,
       });
-    expect(await createHomepageData().hero).toMatchObject({
+    expect((await createHomepageData().hero)[0]).toMatchObject({
       synopsis: 'Summary',
       runtimeSeconds: null,
     });
@@ -183,4 +186,35 @@ it('distinguishes an empty partial pool from total source failure', async () => 
     choices: [],
     partial: true,
   });
+});
+
+it('enriches only the first of five eligible featured films without additional Catalog reads', async () => {
+  vi.mocked(catalog.getTrendingMovies).mockResolvedValue(
+    page(Array.from({ length: 9 }, (_, index) => movie(index + 1))),
+  );
+  const data = createHomepageData();
+  const heroes = await data.hero;
+  expect(heroes.map((item) => item.id)).toEqual([
+    'tmdb:1',
+    'tmdb:2',
+    'tmdb:3',
+    'tmdb:4',
+    'tmdb:5',
+  ]);
+  expect(heroes[0]).toMatchObject({
+    synopsis: 'Detail overview',
+    runtimeSeconds: 5400,
+  });
+  expect(
+    heroes
+      .slice(1)
+      .every(
+        (item) => item.synopsis === 'Summary' && item.runtimeSeconds === null,
+      ),
+  ).toBe(true);
+  expect(catalog.getMovieDetail).toHaveBeenCalledExactlyOnceWith({
+    tmdbMovieId: '1',
+  });
+  expect(catalog.getTrendingMovies).toHaveBeenCalledTimes(1);
+  expect((await data.trending).status).toBe('success');
 });

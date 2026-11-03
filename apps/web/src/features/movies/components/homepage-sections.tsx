@@ -1,4 +1,4 @@
-import { Hero } from './hero';
+import { HeroCarousel } from './hero-carousel';
 import { MovieRail } from './movie-rail';
 import { GenreBrowser } from './genre-browser';
 import type { HomepageData } from '../data/homepage';
@@ -76,8 +76,14 @@ export function SectionState({
   );
 }
 export async function HomepageHero({ data }: { data: HomepageData }) {
-  const movie = await data.hero;
-  if (movie) return <Hero movie={movie} />;
+  const movies = await data.hero;
+  if (movies.length)
+    return (
+      <HeroCarousel
+        key={movies.map(({ id }) => id).join(',')}
+        movies={movies}
+      />
+    );
   const source = await data.trending;
   return (
     <SectionState

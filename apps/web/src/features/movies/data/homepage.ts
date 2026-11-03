@@ -66,8 +66,9 @@ export function createHomepageData() {
           : { status: source.status, data: adapt(selected.popular, names) },
     ),
     hero: (async () => {
-      const { hero } = await trendingSelection;
-      if (!hero) return null;
+      const { heroes } = await trendingSelection;
+      const hero = heroes[0];
+      if (!hero) return [];
       const detail = await settle(
         () => getMovieDetail({ tmdbMovieId: String(hero.id) }),
         () => false,
@@ -78,7 +79,15 @@ export function createHomepageData() {
         detail.status !== 'failure' && detail.data.id === hero.id
           ? detail.data
           : undefined;
-      return toMoviePreview(hero, names, movieImageFallbacks, enrichment).movie;
+      return heroes.map(
+        (item, index) =>
+          toMoviePreview(
+            item,
+            names,
+            movieImageFallbacks,
+            index === 0 ? enrichment : undefined,
+          ).movie,
+      );
     })(),
     genres: Promise.all([trending, popular, genres]).then(([t, p, g]) => {
       if (

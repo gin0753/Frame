@@ -9,6 +9,8 @@ type ArtworkProps = {
   artwork: MovieImage;
   sizes: string;
   preload?: boolean;
+  loading?: 'eager' | 'lazy';
+  onSettled?: () => void;
   className?: string;
   objectPosition?: string;
 };
@@ -22,6 +24,8 @@ function ArtworkAttempt({
   artwork,
   sizes,
   preload,
+  loading,
+  onSettled,
   className,
   objectPosition,
 }: ArtworkProps) {
@@ -43,6 +47,8 @@ function ArtworkAttempt({
       alt=""
       fill
       preload={preload}
+      fetchPriority={preload ? 'high' : undefined}
+      loading={loading}
       draggable={false}
       sizes={sizes}
       className={className}
@@ -55,7 +61,11 @@ function ArtworkAttempt({
       // Next's disk-backed image optimizer. Local licensed fixtures stay optimized.
       unoptimized={artwork.src.startsWith('https://image.tmdb.org/t/p/')}
       style={{ objectFit: 'cover', objectPosition }}
-      onError={() => setFailed(true)}
+      onLoad={onSettled}
+      onError={() => {
+        setFailed(true);
+        onSettled?.();
+      }}
     />
   );
 }
