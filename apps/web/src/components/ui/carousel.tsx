@@ -59,6 +59,7 @@ export function Carousel({
         className="rail-viewport"
         ref={ref}
         tabIndex={0}
+        role="group"
         aria-label={`${label} film cards. Use left and right arrow keys to browse.`}
         onKeyDown={(event) => {
           if (event.target !== event.currentTarget || !api) return;

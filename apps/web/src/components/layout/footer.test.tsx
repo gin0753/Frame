@@ -11,6 +11,9 @@ it('preserves Blender credits and exposes the TMDB notice outside the collapsed 
     /This product uses the TMDB API but is not endorsed or certified by TMDB/,
   );
   expect(notice).toBeVisible();
+  expect(screen.getByRole('group', { name: 'TMDB credits' })).toContainElement(
+    notice,
+  );
   expect(notice.closest('details')).toBeNull();
   const logo = screen.getByRole('img', { name: 'TMDB — The Movie Database' });
   expect(logo).toHaveAttribute('src', '/images/brands/tmdb.svg');

@@ -138,6 +138,20 @@ describe('catalog presentation boundary', () => {
     expect(movie.year).toBe(2020);
     expect(movie.runtimeSeconds).toBe(5400);
     expect(movie.poster.src).toBe(input.posterUrl);
+    expect(
+      toMoviePreview(input, [], fallbacks, {
+        ...detail,
+        overview: 'Detail synopsis',
+      }).movie.synopsis,
+    ).toBe('Detail synopsis');
+    expect(
+      toMoviePreview(
+        { ...input, overview: 'Summary synopsis' },
+        [],
+        fallbacks,
+        { ...detail, overview: null },
+      ).movie.synopsis,
+    ).toBe('Summary synopsis');
     expect(() =>
       toMoviePreview(summary, [], fallbacks, { ...detail, id: 43 }),
     ).toThrow(/identity/);

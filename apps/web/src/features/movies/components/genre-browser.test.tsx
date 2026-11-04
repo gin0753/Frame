@@ -4,6 +4,23 @@ import { expect, it } from 'vitest';
 import { GenreBrowser } from './genre-browser';
 import { movieFixtures } from '../data/fixtures';
 
+it('uses supplied dictionary names and communicates loaded preview scope', async () => {
+  const user = userEvent.setup();
+  render(
+    <GenreBrowser
+      movies={[{ ...movieFixtures[0], genres: ['Drama'] }]}
+      genres={['Drama']}
+      description="Filter this loaded Homepage selection, not the full TMDB catalog."
+    />,
+  );
+  expect(
+    screen.queryByRole('button', { name: 'Fantasy' }),
+  ).not.toBeInTheDocument();
+  await user.click(screen.getByRole('button', { name: 'Drama' }));
+  expect(screen.getByRole('status')).toHaveTextContent('Drama / 1 film');
+  expect(screen.getByText(/not the full TMDB catalog/)).toBeVisible();
+});
+
 it('resets the actual row only after the selected films have been committed', async () => {
   const user = userEvent.setup();
   render(<GenreBrowser movies={movieFixtures} />);
@@ -77,13 +94,15 @@ it('restarts the film row for a new selection and retains filtering through coll
   expect(screen.getByRole('status')).toHaveTextContent('All films / 6 films');
 });
 
-it('starts compact while allowing the full selection to be opened without filtering', async () => {
+it('allows the full selection to be collapsed and reopened without filtering', async () => {
   const user = userEvent.setup();
   render(<GenreBrowser movies={movieFixtures} />);
   const charge = screen.getByRole('link', {
     name: 'Explore Charge on Blender Studio',
     hidden: true,
   });
+  expect(charge).toBeVisible();
+  await user.click(screen.getByText('View selected films'));
   expect(charge).not.toBeVisible();
   await user.click(screen.getByText('View selected films'));
   expect(charge).toBeVisible();
@@ -115,15 +134,33 @@ it('filters the selection, announces the count, and resets without moving focus'
 });
 it('allows deselecting a genre and presents a graceful empty state', async () => {
   const user = userEvent.setup();
-  render(<GenreBrowser movies={[]} />);
+  render(<GenreBrowser movies={[]} genres={['Fantasy']} />);
   const filters = screen.getByRole('group', { name: 'Filter films by genre' });
   const fantasy = within(filters).getByRole('button', {
     name: 'Fantasy',
   });
   await user.click(fantasy);
-  expect(
-    screen.getByText('No films in this genre yet. Try another genre.'),
-  ).toBeVisible();
+  expect(screen.getByText('No film previews are available yet.')).toBeVisible();
   await user.click(fantasy);
   expect(screen.getByRole('status')).toHaveTextContent('All films / 0 films');
+});
+
+it('keeps previews without exposing empty filter controls', () => {
+  render(<GenreBrowser movies={movieFixtures} genres={[]} />);
+  expect(
+    screen.queryByRole('group', { name: 'Filter films by genre' }),
+  ).not.toBeInTheDocument();
+  expect(screen.queryByRole('button')).not.toBeInTheDocument();
+  expect(screen.getByRole('status')).toHaveTextContent('All films / 6 films');
+});
+it('does not suggest another genre when both dictionary and pool are empty', () => {
+  render(<GenreBrowser movies={[]} genres={[]} />);
+  expect(screen.getByText('No film previews are available yet.')).toBeVisible();
+  expect(screen.queryByText(/Try another genre/)).not.toBeInTheDocument();
+  expect(screen.queryByRole('button')).not.toBeInTheDocument();
+});
+it('offers another genre only for a populated pool with no matching films', async () => {
+  render(<GenreBrowser movies={movieFixtures} genres={['Drama']} />);
+  await userEvent.setup().click(screen.getByRole('button', { name: 'Drama' }));
+  expect(screen.getByText(/Try another genre/)).toBeVisible();
 });

@@ -44,7 +44,7 @@ export function MovieCard({
           <h3>{movie.title}</h3>
           {movie.year !== null && <span>{movie.year}</span>}
         </div>
-        <p className="movie-genres">{movie.genres[0]}</p>
+        {movie.genres[0] && <p className="movie-genres">{movie.genres[0]}</p>}
       </a>
       {recognition && movie.recognition && (
         <a href={movie.recognition.sourceUrl} className="recognition-link">

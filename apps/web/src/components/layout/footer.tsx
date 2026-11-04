@@ -38,7 +38,11 @@ export function Footer() {
           terms.
         </p>
       </details>
-      <div className="asset-credits text-sm" aria-label="TMDB credits">
+      <div
+        className="asset-credits text-sm"
+        role="group"
+        aria-label="TMDB credits"
+      >
         <a
           href="https://www.themoviedb.org"
           className="inline-flex min-h-11 items-center rounded-sm focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary"

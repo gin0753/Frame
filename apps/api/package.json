@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "pnpm --filter @frame/contracts run build && pnpm run prisma:generate && tsx watch src/main.ts",
+    "dev": "pnpm --filter @frame/contracts run build && pnpm run prisma:generate && tsx watch --env-file-if-exists=.env.tmdb.local src/main.ts",
     "build": "pnpm --filter @frame/contracts run build && pnpm run prisma:generate && tsc -p tsconfig.build.json",
     "start": "node dist/main.js",
     "typecheck": "pnpm --filter @frame/contracts run build && pnpm run prisma:generate && tsc --noEmit",
