@@ -534,6 +534,7 @@
     overflow-x: auto;
     overscroll-behavior-inline: contain;
     scroll-snap-type: x proximity;
+    scroll-padding-inline: 7px;
     scrollbar-width: thin;
     scrollbar-color: #56585b transparent;
     padding: 7px;
@@ -1006,6 +1007,15 @@
   height: 3rem;
   margin-top: 1.5rem;
   border-radius: 6px;
+}
+.site-header button[aria-haspopup='dialog'] {
+  /* Keep the mobile navigation icon legible over bright provider artwork. */
+  background: #101113cc;
+}
+@media (hover: hover) {
+  .site-header button[aria-haspopup='dialog']:hover {
+    background: var(--surface);
+  }
 }
 /* Live Hero only; the static fixture Hero retains its approved layout. */
 .hero-carousel {

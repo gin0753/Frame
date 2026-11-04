@@ -477,7 +477,9 @@ for (const signal of ['SIGINT', 'SIGTERM'])
 
 test(
   'production Homepage consumes real Nest Catalog with isolated source failures and no retained responses',
-  { timeout: 90000 },
+  {
+    timeout: process.env.FRAME_HOMEPAGE_ACCEPTANCE === 'true' ? 600000 : 90000,
+  },
   async () => {
     const { createApp } = apiRequire('./dist/main');
     const { TmdbAdapter } = apiRequire('./dist/catalog/tmdb/tmdb.adapter');
@@ -490,27 +492,54 @@ test(
     let empty = false;
     let emptyGenres = false;
     let movieCount = 1;
+    let acceptanceProfile = false;
+    let missingBackdrop = false;
+    let missingMetadata = false;
+    let sourceDelay = 0;
     const observed = [];
     const provider = [];
     const privateToken = 'synthetic.homepage.private.token';
     const movie = (id = 42) => ({
       id,
-      title: `Synthetic live ${revision}${id === 42 ? '' : ` slide ${id - 41}`}`,
+      title: acceptanceProfile
+        ? [
+            'Synthetic midnight voyage',
+            'A deliberately long synthetic title about a traveller crossing the edge of the known world',
+            'Synthetic daylight',
+            'Synthetic distant city',
+            'Synthetic last horizon',
+          ][(id - 42) % 5]
+        : `Synthetic live ${revision}${id === 42 ? '' : ` slide ${id - 41}`}`,
       vote_count: 0,
       vote_average: 0,
-      genre_ids: [18],
-      release_date: '',
-      poster_path: null,
-      backdrop_path: `/synthetic${id}.jpg`,
-      overview: 'Synthetic summary',
+      genre_ids: missingMetadata
+        ? []
+        : acceptanceProfile
+          ? [id % 2 ? 35 : 18]
+          : [18],
+      release_date:
+        !missingMetadata && acceptanceProfile && id % 3 ? '2020-01-01' : '',
+      poster_path: acceptanceProfile ? `/synthetic${id}.jpg` : null,
+      backdrop_path: missingBackdrop ? null : `/synthetic${id}.jpg`,
+      overview: missingMetadata
+        ? ''
+        : acceptanceProfile
+          ? 'Synthetic supplied overview with varied lengths. '.repeat(
+              id % 3 ? 8 : 1,
+            )
+          : 'Synthetic summary',
     });
     const fake = new TmdbAdapter({
       config: { enabled: true, token: privateToken },
       fetch: async (url) => {
         provider.push(url.pathname);
+        if (sourceDelay)
+          await new Promise((resolve) => setTimeout(resolve, sourceDelay));
         if (
           failure === 'all' ||
-          (failure === 'trending' && url.pathname.includes('/trending/'))
+          (failure === 'trending' && url.pathname.includes('/trending/')) ||
+          (failure === 'popular' && url.pathname.includes('/popular')) ||
+          (failure === 'genres' && url.pathname === '/3/genre/movie/list')
         )
           throw new TmdbError('NETWORK');
         if (url.pathname === '/3/configuration')
@@ -523,7 +552,12 @@ test(
           });
         if (url.pathname === '/3/genre/movie/list')
           return Response.json({
-            genres: emptyGenres ? [] : [{ id: 18, name: 'Drama' }],
+            genres: emptyGenres
+              ? []
+              : [
+                  { id: 18, name: 'Drama' },
+                  ...(acceptanceProfile ? [{ id: 35, name: 'Comedy' }] : []),
+                ],
           });
         if (url.pathname === '/3/movie/42') {
           if (slowDetail)
@@ -531,8 +565,12 @@ test(
           return Response.json({
             ...movie(),
             genres: [{ id: 18, name: 'Drama' }],
-            runtime: 90,
-            overview: 'Synthetic enriched overview',
+            runtime: missingMetadata ? null : 90,
+            overview: missingMetadata
+              ? ''
+              : acceptanceProfile
+                ? 'Synthetic enriched overview. '.repeat(20)
+                : 'Synthetic enriched overview',
           });
         }
         return Response.json({
@@ -935,26 +973,37 @@ test(
           ),
           true,
         );
-        const controls = await hero
-          .locator('.hero-carousel-controls')
-          .boundingBox();
-        const content = await hero
-          .locator('.hero-content:not([inert])')
-          .boundingBox();
-        const dots = await hero.locator('.hero-pagination').boundingBox();
-        const heroBox = await hero.boundingBox();
+        // One frame/scroll position for every rectangle after viewport changes.
+        const { controls, content, dots, heroBox, playback } =
+          await hero.evaluate((element) => {
+            const box = (node) => {
+              const rect = node.getBoundingClientRect();
+              return {
+                x: rect.x,
+                y: rect.y,
+                width: rect.width,
+                height: rect.height,
+              };
+            };
+            return {
+              controls: box(element.querySelector('.hero-carousel-controls')),
+              content: box(element.querySelector('.hero-content:not([inert])')),
+              dots: box(element.querySelector('.hero-pagination')),
+              heroBox: box(element),
+              playback: box(element.querySelector('.hero-playback')),
+            };
+          });
         assert.ok(
           controls.y >= content.y + content.height,
-          'controls must not overlap content',
+          `controls must not overlap content: ${JSON.stringify({ width, controls, content })}`,
         );
-        const playback = await hero.locator('.hero-playback').boundingBox();
         assert.ok(
           dots.x >= controls.x &&
             Math.abs(
               playback.x + playback.width - (controls.x + controls.width),
             ) < 1 &&
             controls.x + controls.width <= width,
-          'pagination and playback must align to the right container edge',
+          `pagination and playback must align to the right container edge: ${JSON.stringify({ width, controls, dots, playback })}`,
         );
         assert.ok(
           controls.y + controls.height <= heroBox.y + heroBox.height,
@@ -1108,6 +1157,24 @@ test(
       );
       assert.deepEqual(errors, []);
       assert.ok(provider.includes('/3/trending/movie/week'));
+      if (process.env.FRAME_HOMEPAGE_ACCEPTANCE === 'true') {
+        await require('../visual/homepage-acceptance.cjs')({
+          browser,
+          origin,
+          observed,
+          artwork,
+          setScenario(options = {}) {
+            acceptanceProfile = true;
+            movieCount = options.count ?? 9;
+            failure = options.failure ?? '';
+            empty = options.empty ?? false;
+            emptyGenres = options.emptyGenres ?? false;
+            missingBackdrop = options.missingBackdrop ?? false;
+            missingMetadata = options.missingMetadata ?? false;
+            sourceDelay = options.delay ?? 0;
+          },
+        });
+      }
     } finally {
       if (browser) await browser.close();
       if (server) await stop(server);

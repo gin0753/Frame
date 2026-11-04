@@ -21,6 +21,8 @@ pnpm run build
 pnpm run format:check
 ```
 
+Production Homepage visual/accessibility and synthetic lab-performance checks reuse the transport harness. After `pnpm run api:build` and `pnpm run build`, set `FRAME_HOMEPAGE_ACCEPTANCE=true` and run `node --test --test-name-pattern="production Homepage" tests/transport/transport.test.cjs`. It uses owned local servers, seven viewport widths and synthetic provider data; evidence stays under ignored `tmp/stage34b`. Use `FRAME_CHROMIUM_EXECUTABLE` for an installed Chromium override when needed. These checks do not certify field Core Web Vitals, screen readers or provider rights. The separate fixture visual suite is `node --test tests/visual/catalog-images.test.cjs`.
+
 ## Architecture and scope
 
 `apps/web`, `apps/api` and `packages/contracts` are active pnpm workspaces. Shared runtime HTTP schemas live in [contracts](packages/contracts/README.md). The web app uses App Router server rendering, small client regions for Radix navigation, Embla rails and genre filtering, and a provider-independent movie presentation model. No task orchestrator or global state library is needed.

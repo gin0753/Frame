@@ -76,6 +76,11 @@ it('supports viewport arrow keys and jumps when reduced motion is requested', as
   const viewport = screen.getByLabelText(
     'Popular Films film cards. Use left and right arrow keys to browse.',
   );
+  expect(
+    screen.getByRole('group', {
+      name: 'Popular Films film cards. Use left and right arrow keys to browse.',
+    }),
+  ).toBe(viewport);
   viewport.focus();
   await user.keyboard('{ArrowRight}');
   expect(state.scrollNext).toHaveBeenCalledWith(true);
