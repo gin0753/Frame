@@ -103,7 +103,7 @@ export function normalizeMoviePage(
   input: TmdbMovies,
   config: TmdbImageConfig,
   requestedPage: number,
-  trending = false,
+  preserveProviderTotals = false,
 ) {
   const page = tmdbMoviesSchema.parse(input);
   if (page.page !== requestedPage) throw new TmdbError('UNEXPECTED_RESPONSE');
@@ -111,9 +111,11 @@ export function normalizeMoviePage(
     items: page.results.map((movie) => normalizeMovieSummary(movie, config)),
     page: page.page,
     pageSize: 20,
-    // Trending reports upstream totals without implying that pages >1 are requestable.
-    totalPages: trending ? page.total_pages : Math.min(page.total_pages, 500),
-    totalResults: trending
+    // Page-one Trending/Search report upstream totals without promising further pages.
+    totalPages: preserveProviderTotals
+      ? page.total_pages
+      : Math.min(page.total_pages, 500),
+    totalResults: preserveProviderTotals
       ? page.total_results
       : Math.min(page.total_results, 10000),
   });

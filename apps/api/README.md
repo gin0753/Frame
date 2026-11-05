@@ -2,6 +2,14 @@
 
 NestJS Express API with the PostgreSQL foundation. `src/main.ts` creates the application and bootstraps the listener; `AppModule` imports `HealthModule`, `DatabaseModule` and `CatalogModule` (which imports the internal `TmdbModule`). Runtime configuration and sanitized errors remain local to this application. Authentication remains unimplemented; Stage 2.2 catalog reads are documented below.
 
+## Stage 4.1 title search
+
+`GET /api/v1/movies/search?q=...` accepts one required nonblank title query, trims its surrounding whitespace, preserves case/internal whitespace and limits the normalized query to 200 characters. Unknown or repeated parameters are rejected. Page may be omitted or exactly `1`; other pages remain Stage 4.3. The static search handler precedes the numeric movie-ID handler.
+
+TMDB `/search/movie` receives `query`, `page=1`, `include_adult=false` and the existing `en-US` language. Provider order and validated provider totals are preserved in `MoviePage`; totals do not promise accessible additional pages or exhaustive catalogue coverage. Popular-specific caps are not applied. Search has a distinct coordination resource/key including query, page and adult policy. Its TTL is zero and the production retention-rights gate remains unchanged. Existing configuration sharing, cancellation, 2200ms API deadline, no-store headers and safe 429/502/503 mappings apply. No live Search provider verification is claimed.
+
+The web `/search` route renders the first page on the server, with a native GET form and fresh same-query retry. It shows rendered item counts and a first-page notice when appropriate. Discover, filtering, sorting, frontend pagination, autocomplete, internal film details and provider persistence remain outside 4.1. Historical sections below describe their original stage boundaries.
+
 ## Stage 3.2 Homepage consumer
 
 The web Homepage now calls the existing server-only Catalog consumer: one weekly Trending/page-one read shared by Hero and Trending, Popular page one, and Genres concurrently. Only the selected Hero receives one detail enrichment; transient failure or mismatched detail retains summary metadata. The generic consumer error cannot reliably identify a definitive movie 404, so no alternate detail request is attempted. Hero detail does not block the rails. Genre filtering describes the distinct loaded Homepage preview pool; Spring and the verified Blender recognition rail remain static editorial content.

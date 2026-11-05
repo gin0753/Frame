@@ -32,18 +32,40 @@ it.each(['Films', 'Collections'])(
     expect(trigger).toHaveFocus();
   },
 );
-it('keeps unavailable actions disabled and labelled without visible SOON labels', async () => {
-  const user = userEvent.setup();
+it('enables Search while keeping accounts unavailable without visible SOON labels', () => {
   render(<Header />);
   expect(
     screen.getByRole('button', { name: 'Account — coming soon' }),
   ).toBeDisabled();
-  const search = screen.getByRole('button', { name: 'Search — coming soon' });
-  expect(search).toBeDisabled();
-  expect(search).toHaveAttribute('title', 'Search is not available yet');
+  const search = screen.getByRole('link', { name: 'Search' });
+  expect(search).toHaveAttribute('href', '/search');
   expect(screen.queryByText('SOON')).not.toBeInTheDocument();
   search.focus();
-  expect(search).not.toHaveFocus();
-  await user.click(search);
+  expect(search).toHaveFocus();
+  expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+});
+it('uses homepage destinations and a current Search item on secondary pages', async () => {
+  const user = userEvent.setup();
+  const { container } = render(<Header searchPage />);
+  expect(screen.getByRole('link', { name: 'FRAME home' })).toHaveAttribute(
+    'href',
+    '/#discover',
+  );
+  expect(screen.getByRole('link', { name: 'Films' })).toHaveAttribute(
+    'href',
+    '/#films',
+  );
+  expect(screen.getByRole('link', { name: 'Search' })).toHaveAttribute(
+    'aria-current',
+    'page',
+  );
+  expect(container.querySelector('.nav-current')).toBeNull();
+  await user.click(screen.getByRole('button', { name: 'Open navigation' }));
+  const dialog = screen.getByRole('dialog');
+  expect(within(dialog).getByRole('link', { name: 'Search' })).toHaveAttribute(
+    'href',
+    '/search',
+  );
+  await user.click(within(dialog).getByRole('link', { name: 'Search' }));
   expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
 });

@@ -1,5 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { z } from 'zod';
+import { searchQuerySchema } from '@frame/contracts';
 import { tmdbConfig } from './tmdb.config';
 import { TmdbError } from './tmdb.error';
 import {
@@ -67,6 +68,15 @@ export class TmdbAdapter {
     return this.read('/movie/popular', tmdbMoviesSchema, options, { page });
   }
 
+  search(query: string, options: ReadOptions = {}) {
+    const parsed = searchQuerySchema.safeParse({ q: query });
+    if (!parsed.success) throw new TmdbError('INVALID_REQUEST');
+    return this.read('/search/movie', tmdbMoviesSchema, options, {
+      query: parsed.data.q,
+      page: 1,
+      include_adult: 'false',
+    });
+  }
   genres(options: ReadOptions = {}) {
     return this.read('/genre/movie/list', tmdbGenresSchema, options);
   }

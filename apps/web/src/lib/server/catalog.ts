@@ -4,6 +4,7 @@ import {
   movieParamsSchema,
   popularQuerySchema,
   trendingQuerySchema,
+  searchQuerySchema,
 } from '@frame/contracts';
 import type {
   MovieParams,
@@ -11,6 +12,12 @@ import type {
   TrendingQuery,
 } from '@frame/contracts';
 import { apiOrigin } from '../../../config/api-origin';
+
+export class CatalogReadError extends Error {
+  constructor(public readonly status: number) {
+    super('FRAME catalog unavailable or invalid response.');
+  }
+}
 
 // Fixed public reads only; no cookies or caller-controlled origin.
 async function readCatalog<T>(
@@ -36,11 +43,19 @@ async function readCatalog<T>(
         .trim()
         .toLowerCase() !== 'application/json'
     )
-      throw new Error();
+      throw new CatalogReadError(response.status === 429 ? 429 : 503);
     return schema.parse(await response.json());
-  } catch {
-    throw new Error('FRAME catalog unavailable or invalid response.');
+  } catch (error) {
+    if (error instanceof CatalogReadError) throw error;
+    throw new CatalogReadError(503);
   }
+}
+export function searchMovies(q: string) {
+  const parsed = searchQuerySchema.parse({ q });
+  return readCatalog(
+    `${catalogContracts.search.path}?${new URLSearchParams(parsed)}`,
+    catalogContracts.search.response,
+  );
 }
 export function getTrendingMovies(query: Partial<TrendingQuery> = {}) {
   const parsed = trendingQuerySchema.parse(query);

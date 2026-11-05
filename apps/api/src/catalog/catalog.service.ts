@@ -8,6 +8,7 @@ import {
   genresResponseSchema,
   moviePageSchema,
   movieDetailSchema,
+  searchQuerySchema,
 } from '@frame/contracts';
 import { ZodError } from 'zod';
 import { TmdbAdapter } from './tmdb/tmdb.adapter';
@@ -163,6 +164,26 @@ export class CatalogService {
             this.movieRead(
               (signal) => this.tmdb.popular({ page, signal }),
               (movie, config) => normalizeMoviePage(movie, config, page),
+              shared,
+            ),
+          caller,
+        ),
+      signal,
+    );
+  }
+  search(query: string, signal?: AbortSignal) {
+    const { q } = searchQuerySchema.parse({ q: query });
+    return this.read(
+      (caller) =>
+        this.coordinator.get(
+          catalogKey('search', [q, 1, 'adult:false']),
+          'search',
+          moviePageSchema,
+          (shared) =>
+            this.movieRead(
+              (signal) => this.tmdb.search(q, { signal }),
+              // Page-one policy: preserve provider totals, without Popular-specific caps.
+              (movie, config) => normalizeMoviePage(movie, config, 1, true),
               shared,
             ),
           caller,

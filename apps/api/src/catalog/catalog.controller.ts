@@ -14,11 +14,13 @@ import {
   movieParamsSchema,
   popularQuerySchema,
   trendingQuerySchema,
+  searchQuerySchema,
 } from '@frame/contracts';
 import type {
   MovieParams,
   PopularQuery,
   TrendingQuery,
+  SearchQuery,
 } from '@frame/contracts';
 import { ZodValidationPipe } from '../common/zod-validation.pipe';
 import { CatalogService } from './catalog.service';
@@ -80,6 +82,18 @@ export class CatalogController {
     void _query;
     return catalogContracts.genres.response.parse(
       await this.respond(request, (signal) => this.catalog.genres(signal)),
+    );
+  }
+  @Get('movies/search')
+  @Header('Cache-Control', 'no-store')
+  async search(
+    @Query(new ZodValidationPipe(searchQuerySchema)) query: SearchQuery,
+    @Req() request: Request,
+  ) {
+    return catalogContracts.search.response.parse(
+      await this.respond(request, (signal) =>
+        this.catalog.search(query.q, signal),
+      ),
     );
   }
   @Get('movies/:tmdbMovieId')

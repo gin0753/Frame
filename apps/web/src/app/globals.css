@@ -109,6 +109,13 @@
     min-height: 88px;
     gap: 3rem;
   }
+  .site-header-page {
+    position: relative;
+    background: var(--canvas);
+  }
+  .site-header a[aria-current='page'] {
+    color: var(--accent);
+  }
   .desktop-nav {
     display: flex;
     align-items: center;

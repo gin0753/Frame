@@ -80,11 +80,13 @@ function generateOpenApi() {
       path: contract.path,
       operationId: contract.operationId,
       description:
-        contract === catalogContracts.trending
-          ? 'Weekly by default. Only page 1 is accepted provisionally; multi-page support is UNVERIFIED. Totals are provider-reported and do not imply additional pages are requestable.'
-          : contract === catalogContracts.popular
-            ? 'Pages 1–500; totals capped to 500 pages / 10000 results.'
-            : undefined,
+        contract === catalogContracts.search
+          ? 'Title search, en-US, adult results excluded. Query is trimmed, 1–200 characters. Duplicate/unknown parameters are rejected. Only page 1 is available; provider-reported totals do not imply accessible further pages or an exhaustive catalogue.'
+          : contract === catalogContracts.trending
+            ? 'Weekly by default. Only page 1 is accepted provisionally; multi-page support is UNVERIFIED. Totals are provider-reported and do not imply additional pages are requestable.'
+            : contract === catalogContracts.popular
+              ? 'Pages 1–500; totals capped to 500 pages / 10000 results.'
+              : undefined,
       request: {
         query: contract.query,
         ...('params' in contract ? { params: contract.params } : {}),

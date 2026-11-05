@@ -114,6 +114,11 @@ export const genresResponseSchema = z.strictObject({
 });
 export type GenresResponse = z.infer<typeof genresResponseSchema>;
 // HTTP strings stay strings in OpenAPI; pipes return the same validated representation.
+export const searchQuerySchema = z.strictObject({
+  q: z.string().trim().min(1).max(200),
+  page: z.literal('1').default('1'),
+});
+export type SearchQuery = z.infer<typeof searchQuerySchema>;
 export const trendingQuerySchema = z.strictObject({
   timeWindow: z.enum(['day', 'week']).default('week'),
   page: z.literal('1').default('1'),
@@ -139,6 +144,13 @@ export type TrendingQuery = z.infer<typeof trendingQuerySchema>;
 export type PopularQuery = z.infer<typeof popularQuerySchema>;
 export type MovieParams = z.infer<typeof movieParamsSchema>;
 export const catalogContracts = {
+  search: {
+    method: 'get',
+    path: '/api/v1/movies/search',
+    operationId: 'searchMovies',
+    query: searchQuerySchema,
+    response: moviePageSchema,
+  },
   trending: {
     method: 'get',
     path: '/api/v1/movies/trending',

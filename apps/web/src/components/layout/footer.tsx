@@ -1,11 +1,11 @@
 import { ArrowUpRight } from 'lucide-react';
 import Image from 'next/image';
 import { assetCredits } from '@/features/movies/data/asset-credits';
-export function Footer() {
+export function Footer({ homeHref = '#discover' }: { homeHref?: string }) {
   return (
     <footer className="site-footer container-shell">
       <div className="footer-top">
-        <a href="#discover" className="brand" aria-label="FRAME home">
+        <a href={homeHref} className="brand" aria-label="FRAME home">
           FRAME<span>.</span>
         </a>
         <p>

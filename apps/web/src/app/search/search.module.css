@@ -1,0 +1,127 @@
+.main {
+  padding-block: 2rem 3rem;
+  min-height: calc(100svh - 76px);
+}
+.title {
+  font-size: clamp(2rem, 3vw, 2.5rem);
+  font-weight: 600;
+  line-height: 1.15;
+  letter-spacing: -0.035em;
+}
+.description {
+  margin-top: 0.75rem;
+  font-size: 0.9375rem;
+  line-height: 1.7;
+  color: var(--text-secondary);
+}
+.form {
+  max-width: 48rem;
+  margin-top: 1.5rem;
+}
+.form label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-size: 0.875rem;
+}
+.controls {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+.controls input {
+  min-width: 0;
+  width: 100%;
+  min-height: 48px;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--stroke);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 1rem;
+}
+.controls input::placeholder {
+  color: var(--text-secondary);
+}
+.submit {
+  min-height: 48px;
+  border-radius: 6px;
+}
+.results {
+  margin-top: 2rem;
+}
+.resultHeading {
+  overflow-wrap: anywhere;
+}
+.summary {
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  line-height: 1.7;
+  margin-top: 0.5rem;
+}
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: var(--rail-gap);
+  row-gap: 1.5rem;
+  margin-top: 1.25rem;
+  align-items: start;
+}
+.grid > * {
+  min-width: 0;
+}
+.state {
+  padding: 1.5rem;
+  border: 1px solid var(--stroke);
+  border-radius: 8px;
+  overflow-wrap: anywhere;
+}
+.state p {
+  margin-top: 0.75rem;
+  line-height: 1.7;
+  color: var(--text-secondary);
+}
+.state form,
+.state > a {
+  display: inline-block;
+  margin-top: 1rem;
+}
+.state > a {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  min-height: 44px;
+  padding-block: 0.75rem;
+}
+@media (min-width: 768px) {
+  .main {
+    padding-block: 3rem var(--section-space);
+    min-height: calc(100svh - 88px);
+  }
+  .controls {
+    flex-direction: row;
+  }
+  .submit {
+    min-width: 112px;
+  }
+  .results {
+    margin-top: 3rem;
+  }
+  .grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    row-gap: 2rem;
+    margin-top: 1.5rem;
+  }
+  .state {
+    padding: 2rem;
+  }
+}
+@media (min-width: 1024px) {
+  .grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+@media (min-width: 1280px) {
+  .grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+}

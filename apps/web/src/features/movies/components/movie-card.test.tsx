@@ -3,6 +3,12 @@ import { expect, it } from 'vitest';
 import { MovieCard } from './movie-card';
 import { Hero } from './hero';
 import { movieFixtures } from '../data/fixtures';
+it('uses visible title and metadata for result-card names with a truthful destination', () => {
+  render(<MovieCard movie={movieFixtures[0]} variant="poster" labelMetadata />);
+  expect(
+    screen.getByRole('link', { name: /Explore Charge.*on Blender Studio/ }),
+  ).toHaveAccessibleName(new RegExp(String(movieFixtures[0].year)));
+});
 it('renders a live destination without empty metadata or fixture recognition', () => {
   const movie = {
     ...movieFixtures[0],

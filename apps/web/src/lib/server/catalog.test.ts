@@ -6,6 +6,8 @@ import {
   getMovieDetail,
   getPopularMovies,
   getTrendingMovies,
+  searchMovies,
+  CatalogReadError,
 } from './catalog';
 afterEach(() => {
   vi.restoreAllMocks();
@@ -13,6 +15,23 @@ afterEach(() => {
   vi.unstubAllEnvs();
 });
 describe('server catalog consumer', () => {
+  it('encodes normalized searches and safely preserves rate limits', async () => {
+    vi.stubEnv('FRAME_API_ORIGIN', 'http://127.0.0.1:3001');
+    const fetch = vi
+      .fn()
+      .mockResolvedValue(new Response(null, { status: 429 }));
+    vi.stubGlobal('fetch', fetch);
+    await expect(searchMovies(' Amélie & 東京 ')).rejects.toEqual(
+      new CatalogReadError(429),
+    );
+    const url = new URL(fetch.mock.calls[0][0]);
+    expect(url.searchParams.get('q')).toBe('Amélie & 東京');
+    expect(url.searchParams.get('page')).toBe('1');
+    expect(fetch.mock.calls[0][1]).toMatchObject({
+      cache: 'no-store',
+      redirect: 'error',
+    });
+  });
   it('uses fixed trusted paths, default weekly page one and private server transport', async () => {
     vi.stubEnv('FRAME_API_ORIGIN', 'http://127.0.0.1:3001');
     const fetch = vi.fn().mockImplementation(async (url: string) =>

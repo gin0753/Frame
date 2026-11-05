@@ -6,28 +6,39 @@ export function MovieCard({
   movie,
   variant = 'landscape',
   recognition = false,
+  sizes,
+  labelMetadata = false,
 }: {
   movie: MoviePreview;
   variant?: 'landscape' | 'poster';
   recognition?: boolean;
+  sizes?: string;
+  /** Include visible metadata for result cards used with voice navigation. */
+  labelMetadata?: boolean;
 }) {
   const artwork = variant === 'poster' ? movie.poster : movie.backdrop;
   return (
     <article className={cn('movie-card', `movie-card-${variant}`)}>
       <a
         href={movie.exploreUrl}
-        aria-label={`Explore ${movie.title} on ${movie.destinationLabel ?? 'Blender Studio'}`}
+        aria-label={
+          labelMetadata
+            ? undefined
+            : `Explore ${movie.title} on ${movie.destinationLabel ?? 'Blender Studio'}`
+        }
         className="movie-card-link group"
         draggable={false}
       >
+        {labelMetadata && <span className="sr-only">Explore </span>}
         <div className="movie-image">
           <MovieArtwork
             artwork={artwork}
             objectPosition={artwork.position}
             sizes={
-              variant === 'poster'
+              sizes ??
+              (variant === 'poster'
                 ? '(max-width: 767px) 42vw, (max-width: 1023px) 22vw, (max-width: 1279px) 20vw, 17vw'
-                : '(max-width: 767px) 78vw, (max-width: 1023px) 40vw, (max-width: 1279px) 30vw, 22vw'
+                : '(max-width: 767px) 78vw, (max-width: 1023px) 40vw, (max-width: 1279px) 30vw, 22vw')
             }
           />
           <div className="movie-image-shade" />
@@ -45,6 +56,12 @@ export function MovieCard({
           {movie.year !== null && <span>{movie.year}</span>}
         </div>
         {movie.genres[0] && <p className="movie-genres">{movie.genres[0]}</p>}
+        {labelMetadata && (
+          <span className="sr-only">
+            {' '}
+            on {movie.destinationLabel ?? 'Blender Studio'}
+          </span>
+        )}
       </a>
       {recognition && movie.recognition && (
         <a href={movie.recognition.sourceUrl} className="recognition-link">
