@@ -15,12 +15,14 @@ import {
   popularQuerySchema,
   trendingQuerySchema,
   searchQuerySchema,
+  discoverQuerySchema,
 } from '@frame/contracts';
 import type {
   MovieParams,
   PopularQuery,
   TrendingQuery,
   SearchQuery,
+  DiscoverQuery,
 } from '@frame/contracts';
 import { ZodValidationPipe } from '../common/zod-validation.pipe';
 import { CatalogService } from './catalog.service';
@@ -93,6 +95,18 @@ export class CatalogController {
     return catalogContracts.search.response.parse(
       await this.respond(request, (signal) =>
         this.catalog.search(query.q, signal),
+      ),
+    );
+  }
+  @Get('movies/discover')
+  @Header('Cache-Control', 'no-store')
+  async discover(
+    @Query(new ZodValidationPipe(discoverQuerySchema)) query: DiscoverQuery,
+    @Req() request: Request,
+  ) {
+    return catalogContracts.discover.response.parse(
+      await this.respond(request, (signal) =>
+        this.catalog.discover(query, signal),
       ),
     );
   }

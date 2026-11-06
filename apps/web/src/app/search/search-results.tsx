@@ -1,5 +1,5 @@
 import { Button } from '@/components/ui/button';
-import { MovieCard } from '@/features/movies/components/movie-card';
+import { MovieResultsGrid } from '@/features/movies/components/movie-results-grid';
 import { toMoviePreview } from '@/features/movies/data/catalog-adapter';
 import { movieImageFallbacks } from '@/features/movies/data/image-fallbacks';
 import {
@@ -58,19 +58,12 @@ export async function SearchResults({ q }: { q: string }) {
               Only the first page is available in this release.
             </p>
           )}
-          <div className={styles.grid}>
-            {page.items.map((summary) => (
-              <MovieCard
-                key={summary.id}
-                movie={
-                  toMoviePreview(summary, genres, movieImageFallbacks).movie
-                }
-                variant="poster"
-                labelMetadata
-                sizes="(max-width: 767px) 44vw, (max-width: 1023px) 30vw, (max-width: 1279px) 22vw, 18vw"
-              />
-            ))}
-          </div>
+          <MovieResultsGrid
+            movies={page.items.map(
+              (summary) =>
+                toMoviePreview(summary, genres, movieImageFallbacks).movie,
+            )}
+          />
         </>
       ) : (
         <div className={styles.state}>

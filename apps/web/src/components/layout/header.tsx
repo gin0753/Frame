@@ -4,25 +4,38 @@ import { Menu, X, Search, UserRound } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 const links = [
-  { href: '#discover', label: 'Discover' },
+  { href: '/discover', label: 'Discover' },
   { href: '#films', label: 'Films' },
   { href: '#collections', label: 'Collections' },
 ];
 
-export function Header({ searchPage = false }: { searchPage?: boolean }) {
-  const home = searchPage ? '/' : '';
+export function Header({
+  context = 'home',
+}: {
+  context?: 'home' | 'search' | 'discover';
+}) {
+  const searchPage = context === 'search';
+  const secondary = context !== 'home';
+  const home = secondary ? '/' : '';
+  const destination = (href: string) =>
+    href.startsWith('/') ? href : home + href;
   return (
-    <header className={`site-header${searchPage ? ' site-header-page' : ''}`}>
+    <header className={`site-header${secondary ? ' site-header-page' : ''}`}>
       <div className="header-inner container-shell">
         <a href={`${home}#discover`} aria-label="FRAME home" className="brand">
           FRAME<span>.</span>
         </a>
         <nav aria-label="Main navigation" className="desktop-nav">
-          {links.map((link, index) => (
+          {links.map((link) => (
             <a
-              className={`nav-link ${!searchPage && index === 0 ? 'nav-current' : ''}`}
+              className={`nav-link ${context === 'discover' && link.href === '/discover' ? 'nav-current' : ''}`}
               key={link.href}
-              href={`${home}${link.href}`}
+              aria-current={
+                context === 'discover' && link.href === '/discover'
+                  ? 'page'
+                  : undefined
+              }
+              href={destination(link.href)}
             >
               {link.label}
             </a>
@@ -87,7 +100,15 @@ export function Header({ searchPage = false }: { searchPage?: boolean }) {
                 >
                   {links.map((link) => (
                     <Dialog.Close key={link.href} asChild>
-                      <a className="py-2 text-xl" href={`${home}${link.href}`}>
+                      <a
+                        className="py-2 text-xl"
+                        href={destination(link.href)}
+                        aria-current={
+                          context === 'discover' && link.href === '/discover'
+                            ? 'page'
+                            : undefined
+                        }
+                      >
                         {link.label}
                       </a>
                     </Dialog.Close>

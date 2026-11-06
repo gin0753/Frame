@@ -59,17 +59,7 @@
   line-height: 1.7;
   margin-top: 0.5rem;
 }
-.grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  column-gap: var(--rail-gap);
-  row-gap: 1.5rem;
-  margin-top: 1.25rem;
-  align-items: start;
-}
-.grid > * {
-  min-width: 0;
-}
+
 .state {
   padding: 1.5rem;
   border: 1px solid var(--stroke);
@@ -106,22 +96,8 @@
   .results {
     margin-top: 3rem;
   }
-  .grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    row-gap: 2rem;
-    margin-top: 1.5rem;
-  }
+
   .state {
     padding: 2rem;
-  }
-}
-@media (min-width: 1024px) {
-  .grid {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
-}
-@media (min-width: 1280px) {
-  .grid {
-    grid-template-columns: repeat(5, minmax(0, 1fr));
   }
 }

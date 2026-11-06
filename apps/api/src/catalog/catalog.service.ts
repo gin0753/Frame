@@ -1,5 +1,6 @@
 ﻿import {
   HttpException,
+  BadRequestException,
   Inject,
   Injectable,
   NotFoundException,
@@ -9,6 +10,8 @@ import {
   moviePageSchema,
   movieDetailSchema,
   searchQuerySchema,
+  discoverQuerySchema,
+  type DiscoverQuery,
 } from '@frame/contracts';
 import { ZodError } from 'zod';
 import { TmdbAdapter } from './tmdb/tmdb.adapter';
@@ -191,23 +194,62 @@ export class CatalogService {
       signal,
     );
   }
-  genres(signal?: AbortSignal) {
+  discover(input: DiscoverQuery, signal?: AbortSignal) {
+    const query = discoverQuerySchema.parse(input);
+    const { genreId, yearFrom, yearTo, sort } = query;
     return this.read(
       (caller) =>
         this.coordinator.get(
-          catalogKey('genres'),
-          'genres',
-          genresResponseSchema,
-          async (signal) =>
-            genresResponseSchema.parse({
-              items: (await this.tmdb.genres({ signal })).genres.map(
-                normalizeGenre,
-              ),
-            }),
+          catalogKey('discover', [
+            genreId || '',
+            yearFrom || '',
+            yearTo || '',
+            sort,
+            1,
+            'adult:false',
+            'video:false',
+            sort === 'rated' ? 'votes:100' : 'votes:unset',
+          ]),
+          'discover',
+          moviePageSchema,
+          (shared) =>
+            this.movieRead(
+              async (signal) => {
+                if (genreId) {
+                  const dictionary = await this.readGenres(signal);
+                  if (
+                    !dictionary.items.some(
+                      (genre) => genre.id === Number(genreId),
+                    )
+                  )
+                    throw new BadRequestException('Choose an available genre.');
+                }
+                return this.tmdb.discover(query, { signal });
+              },
+              (movie, config) => normalizeMoviePage(movie, config, 1),
+              shared,
+            ),
           caller,
         ),
       signal,
     );
+  }
+  private readGenres(signal: AbortSignal) {
+    return this.coordinator.get(
+      catalogKey('genres'),
+      'genres',
+      genresResponseSchema,
+      async (signal) =>
+        genresResponseSchema.parse({
+          items: (await this.tmdb.genres({ signal })).genres.map(
+            normalizeGenre,
+          ),
+        }),
+      signal,
+    );
+  }
+  genres(signal?: AbortSignal) {
+    return this.read((caller) => this.readGenres(caller), signal);
   }
   detail(id: number, signal?: AbortSignal) {
     return this.read(

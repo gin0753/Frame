@@ -5,6 +5,8 @@ import {
   popularQuerySchema,
   trendingQuerySchema,
   searchQuerySchema,
+  discoverQuerySchema,
+  type DiscoverQuery,
 } from '@frame/contracts';
 import type {
   MovieParams,
@@ -23,6 +25,7 @@ export class CatalogReadError extends Error {
 async function readCatalog<T>(
   path: string,
   schema: { parse(value: unknown): T },
+  validationErrors = false,
 ): Promise<T> {
   const origin = apiOrigin(process.env.FRAME_API_ORIGIN);
   if (!origin)
@@ -43,7 +46,13 @@ async function readCatalog<T>(
         .trim()
         .toLowerCase() !== 'application/json'
     )
-      throw new CatalogReadError(response.status === 429 ? 429 : 503);
+      throw new CatalogReadError(
+        response.status === 429
+          ? 429
+          : validationErrors && response.status === 400
+            ? 400
+            : 503,
+      );
     return schema.parse(await response.json());
   } catch (error) {
     if (error instanceof CatalogReadError) throw error;
@@ -82,5 +91,19 @@ export function getMovieDetail(params: MovieParams) {
   return readCatalog(
     catalogContracts.detail.path.replace('{tmdbMovieId}', parsed.tmdbMovieId),
     catalogContracts.detail.response,
+  );
+}
+
+export function discoverMovies(query: DiscoverQuery) {
+  const parsed = discoverQuerySchema.parse(query);
+  const params = new URLSearchParams(
+    Object.entries(parsed).filter(
+      ([, value]) => value !== undefined && value !== '',
+    ) as [string, string][],
+  );
+  return readCatalog(
+    catalogContracts.discover.path + '?' + params,
+    catalogContracts.discover.response,
+    true,
   );
 }

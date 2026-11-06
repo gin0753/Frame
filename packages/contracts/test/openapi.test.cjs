@@ -9,6 +9,7 @@ test('OpenAPI validates, is deterministic and contains only implemented routes',
   assert.deepEqual(Object.keys(document.paths), [
     '/api/v1/health',
     '/api/v1/ready',
+    '/api/v1/movies/discover',
     '/api/v1/movies/search',
     '/api/v1/movies/trending',
     '/api/v1/movies/popular',

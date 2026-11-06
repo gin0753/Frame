@@ -46,7 +46,7 @@ it('enables Search while keeping accounts unavailable without visible SOON label
 });
 it('uses homepage destinations and a current Search item on secondary pages', async () => {
   const user = userEvent.setup();
-  const { container } = render(<Header searchPage />);
+  const { container } = render(<Header context="search" />);
   expect(screen.getByRole('link', { name: 'FRAME home' })).toHaveAttribute(
     'href',
     '/#discover',
@@ -68,4 +68,26 @@ it('uses homepage destinations and a current Search item on secondary pages', as
   );
   await user.click(within(dialog).getByRole('link', { name: 'Search' }));
   expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+});
+
+it('marks Discover current in desktop and mobile navigation', async () => {
+  const user = userEvent.setup();
+  render(<Header context="discover" />);
+  expect(screen.getByRole('link', { name: 'Discover' })).toHaveAttribute(
+    'href',
+    '/discover',
+  );
+  expect(screen.getByRole('link', { name: 'Discover' })).toHaveAttribute(
+    'aria-current',
+    'page',
+  );
+  expect(screen.getByRole('link', { name: 'Search' })).not.toHaveAttribute(
+    'aria-current',
+  );
+  await user.click(screen.getByRole('button', { name: 'Open navigation' }));
+  expect(
+    within(screen.getByRole('dialog')).getByRole('link', { name: 'Discover' }),
+  ).toHaveAttribute('aria-current', 'page');
+  await user.keyboard('{Escape}');
+  expect(screen.getByRole('button', { name: 'Open navigation' })).toHaveFocus();
 });

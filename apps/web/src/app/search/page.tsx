@@ -1,3 +1,4 @@
+import { MovieResultsSkeleton } from '@/features/movies/components/movie-results-grid';
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import { Header } from '@/components/layout/header';
@@ -19,14 +20,7 @@ function LoadingResults() {
   return (
     <section aria-busy="true" aria-label="Search results">
       <p role="status">Searching films…</p>
-      <div className={styles.grid} aria-hidden="true">
-        {Array.from({ length: 10 }, (_, index) => (
-          <div key={index}>
-            <div className="skeleton skeleton-poster" />
-            <div className="skeleton skeleton-caption" />
-          </div>
-        ))}
-      </div>
+      <MovieResultsSkeleton />
     </section>
   );
 }
@@ -40,7 +34,7 @@ export default async function SearchPage({
   const invalid = query.status === 'invalid';
   return (
     <>
-      <Header searchPage />
+      <Header context="search" />
       <main id="main" className={`container-shell ${styles.main}`}>
         <h1 className={styles.title}>Search films</h1>
         <p className={styles.description}>Find a film by its title.</p>

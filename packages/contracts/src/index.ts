@@ -139,11 +139,62 @@ export const movieParamsSchema = z.strictObject({
     .regex(movieIdPattern)
     .describe('Positive TMDB int32 movie ID (1–2147483647).'),
 });
+// Native GET empty optional controls mean unset. Arrays remain invalid.
+const optionalGenre = z
+  .string()
+  .regex(movieIdPattern)
+  .or(z.literal(''))
+  .optional();
+const discoverYearPattern = /^(?:18[0-9]{2}|19[0-9]{2}|20[0-9]{2}|2100)$/;
+const optionalYear = z
+  .string()
+  .regex(discoverYearPattern)
+  .or(z.literal(''))
+  .optional();
+export const discoverSortSchema = z.enum(['popular', 'newest', 'rated']);
+export const discoverQuerySchema = z
+  .strictObject({
+    genreId: optionalGenre.describe(
+      'Single current Genre ID; membership validated by the API. Empty means unset.',
+    ),
+    yearFrom: optionalYear.describe(
+      'Inclusive primary release year, 1800–2100. Empty means unset.',
+    ),
+    yearTo: optionalYear.describe(
+      'Inclusive primary release year, 1800–2100. Empty means unset.',
+    ),
+    sort: discoverSortSchema
+      .default('popular')
+      .describe(
+        'popular: popularity.desc; newest: primary_release_date.desc including upcoming; rated: vote_average.desc with vote_count.gte=100.',
+      ),
+    page: z.literal('1').default('1'),
+  })
+  .refine(
+    (query) =>
+      !query.yearFrom ||
+      !query.yearTo ||
+      !discoverYearPattern.test(query.yearFrom) ||
+      !discoverYearPattern.test(query.yearTo) ||
+      query.yearFrom <= query.yearTo,
+    {
+      message: 'From year must be earlier than or equal to To year.',
+      path: ['yearTo'],
+    },
+  );
+export type DiscoverQuery = z.infer<typeof discoverQuerySchema>;
 export const emptyQuerySchema = z.strictObject({});
 export type TrendingQuery = z.infer<typeof trendingQuerySchema>;
 export type PopularQuery = z.infer<typeof popularQuerySchema>;
 export type MovieParams = z.infer<typeof movieParamsSchema>;
 export const catalogContracts = {
+  discover: {
+    method: 'get',
+    path: '/api/v1/movies/discover',
+    operationId: 'discoverMovies',
+    query: discoverQuerySchema,
+    response: moviePageSchema,
+  },
   search: {
     method: 'get',
     path: '/api/v1/movies/search',

@@ -3,7 +3,13 @@ export const CATALOG_COORDINATOR_OPTIONS = Symbol(
   'CATALOG_COORDINATOR_OPTIONS',
 );
 export type CatalogResource =
-  'trending' | 'popular' | 'search' | 'genres' | 'detail' | 'configuration';
+  | 'discover'
+  | 'trending'
+  | 'popular'
+  | 'search'
+  | 'genres'
+  | 'detail'
+  | 'configuration';
 export interface CatalogCoordinatorOptions {
   retentionEnabled: boolean;
   maxEntries: number;
@@ -64,6 +70,7 @@ export function catalogPolicy(
       trending: ttl('TRENDING'),
       popular: ttl('POPULAR'),
       search: 0,
+      discover: 0,
       genres: ttl('GENRES'),
       detail: ttl('DETAIL'),
       configuration: ttl('CONFIGURATION'),
