@@ -101,7 +101,7 @@ test('Discover HTTP dispatch, exact mapping, validation, totals and failures', a
       assert.equal(p.has('release_date.gte'), false);
     }
     for (const q of [
-      'page=2',
+      'page=501',
       'sort=bad',
       'genreId=0',
       'genreId=18&genreId=28',

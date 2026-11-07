@@ -1,5 +1,15 @@
 ﻿# FRAME API
 
+## Stage 4.3 URL state and pagination
+
+Search and Discover accept omitted page (default string 1) or unpadded decimal strings 1-500. Duplicate, unknown and malformed parameters remain errors. Both forward the requested page and include it in coordination identity. Both return pageSize 20, totalPages=min(provider,500), totalResults=min(provider,10000), preserving provider ordering. This deliberately supersedes Stage 4.1 Search's preserved totals. Totals are bounded provider metadata, not exhaustive catalogue counts or inferred ordinal ranges. Trending retains its existing provider totals and Trending/Popular retain their existing strict provider validation.
+
+Search/Discover alone use compatibility validation in both adapter and normalizer: safe integer fields, page bounds and identity, at most 20 fully validated movies, nonnegative counts, zero/positive consistency, item count <= totalResults, and no nonempty page beyond total_pages. Sparse/partial pages and empty pages with positive totals are accepted without exact fullness or ceil arithmetic. This is an approved application policy, not verified live TMDB behavior. The shared public MoviePage contract is unchanged.
+
+Valid provider HTTP 200 empty responses retain requested page and actual capped totals. Generic provider errors retain existing safe mappings. In-bounds out-of-range provider error behavior remains unverified; exceptional page-1 recovery is intentionally absent. No retry, retention, database or infrastructure change. The single 2200ms API and 3000ms web budgets remain.
+
+Native GET Search/Apply submissions reset page; Reset clears Discover state. Native Previous/Next anchors derive only from validated applied state; Retry preserves page and tuple. Page 1/default sort/empty optional fields remain equivalent forms without cosmetic redirects. Later empty/unavailable pages offer a tuple-preserving page-1 link.
+
 NestJS Express API with the PostgreSQL foundation. `src/main.ts` creates the application and bootstraps the listener; `AppModule` imports `HealthModule`, `DatabaseModule` and `CatalogModule` (which imports the internal `TmdbModule`). Runtime configuration and sanitized errors remain local to this application. Authentication remains unimplemented; Stage 2.2 catalog reads are documented below.
 
 ## Stage 4.1 title search

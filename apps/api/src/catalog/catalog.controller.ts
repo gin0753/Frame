@@ -94,7 +94,7 @@ export class CatalogController {
   ) {
     return catalogContracts.search.response.parse(
       await this.respond(request, (signal) =>
-        this.catalog.search(query.q, signal),
+        this.catalog.search(query.q, signal, Number(query.page)),
       ),
     );
   }

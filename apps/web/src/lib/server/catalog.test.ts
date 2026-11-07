@@ -22,12 +22,12 @@ describe('server catalog consumer', () => {
       .fn()
       .mockResolvedValue(new Response(null, { status: 429 }));
     vi.stubGlobal('fetch', fetch);
-    await expect(searchMovies(' Amélie & 東京 ')).rejects.toEqual(
+    await expect(searchMovies(' Amélie & 東京 ', '2')).rejects.toEqual(
       new CatalogReadError(429),
     );
     const url = new URL(fetch.mock.calls[0][0]);
     expect(url.searchParams.get('q')).toBe('Amélie & 東京');
-    expect(url.searchParams.get('page')).toBe('1');
+    expect(url.searchParams.get('page')).toBe('2');
     expect(fetch.mock.calls[0][1]).toMatchObject({
       cache: 'no-store',
       redirect: 'error',

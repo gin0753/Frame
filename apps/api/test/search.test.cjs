@@ -85,7 +85,7 @@ test('search real HTTP dispatch, encoding, ordering, validation, errors and no r
       'q=%20',
       'q=a&q=b',
       'q=a&page=1&page=1',
-      'q=a&page=2',
+      'q=a&page=501',
       'q=a&sort=title',
       `q=${'a'.repeat(201)}`,
     ]) {
@@ -104,9 +104,9 @@ test('search real HTTP dispatch, encoding, ordering, validation, errors and no r
     );
     empty = false;
     large = true;
-    const uncapped = await (await fetch(origin + path + 'q=large')).json();
-    assert.equal(uncapped.totalPages, 601);
-    assert.equal(uncapped.totalResults, 12001);
+    const capped = await (await fetch(origin + path + 'q=large')).json();
+    assert.equal(capped.totalPages, 500);
+    assert.equal(capped.totalResults, 10000);
     for (const [status, expected] of [
       [429, 429],
       [500, 502],

@@ -26,7 +26,7 @@ test('Discover strict query defaults, boundaries, optional blanks and invalid tu
     { yearFrom: ['1990', '1991'] },
     { sort: 'popularity.desc' },
     { sort: ['rated', 'popular'] },
-    { page: '2' },
+    { page: '501' },
     { page: '' },
     { page: ['1', '1'] },
     { unknown: '' },
@@ -51,7 +51,9 @@ test('Discover OpenAPI documents policy and bounded query values', async () => {
     'newest',
     'rated',
   ]);
-  assert.deepEqual(op.parameters.find((p) => p.name === 'page').schema.enum, [
-    '1',
-  ]);
+  assert.ok(
+    new RegExp(
+      op.parameters.find((p) => p.name === 'page').schema.pattern,
+    ).test('500'),
+  );
 });

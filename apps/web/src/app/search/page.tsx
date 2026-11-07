@@ -69,14 +69,18 @@ export default async function SearchPage({
             <div className={styles.state}>
               <h2>Check your search</h2>
               <p id="search-validation">
-                Use one film title of up to 200 characters. Filters and
-                additional pages are not available yet.
+                Use one film title of up to 200 characters. Use supported
+                parameters once each and a whole page number from 1 to 500
+                without padding.
               </p>
               <a href="/search">Start a new search</a>
             </div>
           ) : (
-            <Suspense key={query.q} fallback={<LoadingResults />}>
-              <SearchResults q={query.q} />
+            <Suspense
+              key={JSON.stringify([query.q, query.page])}
+              fallback={<LoadingResults />}
+            >
+              <SearchResults q={query.q} requestedPage={query.page} />
             </Suspense>
           )}
         </div>

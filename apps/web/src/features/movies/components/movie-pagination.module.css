@@ -1,0 +1,30 @@
+.pagination {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 2rem;
+  font-size: 0.875rem;
+}
+.pagination a,
+.pagination > span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: 0.75rem;
+  border-radius: 6px;
+}
+.pagination a {
+  border: 1px solid var(--stroke);
+  background: var(--surface);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.pagination > span {
+  color: var(--text-secondary);
+}
+.pagination p {
+  color: var(--text-secondary);
+}

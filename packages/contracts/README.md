@@ -1,5 +1,15 @@
 ﻿# FRAME contracts
 
+## Stage 4.3 URL state and pagination
+
+Search and Discover accept omitted page (default string 1) or unpadded decimal strings 1-500. Duplicate, unknown and malformed parameters remain errors. Both forward the requested page and include it in coordination identity. Both return pageSize 20, totalPages=min(provider,500), totalResults=min(provider,10000), preserving provider ordering. This deliberately supersedes Stage 4.1 Search's preserved totals. Totals are bounded provider metadata, not exhaustive catalogue counts or inferred ordinal ranges. Trending retains its existing provider totals and Trending/Popular retain their existing strict provider validation.
+
+Search/Discover alone use compatibility validation in both adapter and normalizer: safe integer fields, page bounds and identity, at most 20 fully validated movies, nonnegative counts, zero/positive consistency, item count <= totalResults, and no nonempty page beyond total_pages. Sparse/partial pages and empty pages with positive totals are accepted without exact fullness or ceil arithmetic. This is an approved application policy, not verified live TMDB behavior. The shared public MoviePage contract is unchanged.
+
+Valid provider HTTP 200 empty responses retain requested page and actual capped totals. Generic provider errors retain existing safe mappings. In-bounds out-of-range provider error behavior remains unverified; exceptional page-1 recovery is intentionally absent. No retry, retention, database or infrastructure change. The single 2200ms API and 3000ms web budgets remain.
+
+Native GET Search/Apply submissions reset page; Reset clears Discover state. Native Previous/Next anchors derive only from validated applied state; Retry preserves page and tuple. Page 1/default sort/empty optional fields remain equivalent forms without cosmetic redirects. Later empty/unavailable pages offer a tuple-preserving page-1 link.
+
 `src/index.ts` is the runtime schema authority for implemented health/readiness successes and sanitized API errors. Types are inferred from Zod **4.6.7**. Import only `@frame/contracts`; private source paths are not exported. This workspace depends at runtime only on Zod, with no Nest, Next, Prisma, database or Node server imports. MoviePreview and future provider payloads remain outside it.
 
 All current response objects are strict, including nested errors: unknown fields fail validation rather than being silently stripped. Health is `{ status: 'ok', service: 'frame-api' }`; readiness is `{ status: 'ready', service: 'frame-api' }`. Errors retain `{ error: { code, message, requestId } }`, without details or internal fields. Request IDs match the current server-generated `req_` plus UUID v4. Readiness 503 retains generic `HTTP_ERROR`; catalog 502/503 use `CATALOG_UNAVAILABLE`. No runtime status, message or envelope was changed. The frozen example's `req_example` and optional details are illustrative future design, not current wire values.

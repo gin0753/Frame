@@ -12,8 +12,15 @@ export function parseSearchParams(
     ...query,
     ...(blank ? { q: '_' } : {}),
   });
-  if (!parsed.success) return { status: 'invalid' as const, q };
+  if (!parsed.success || (blank && parsed.data.page !== '1'))
+    return { status: 'invalid' as const, q };
   return blank
     ? { status: 'initial' as const, q: '' }
-    : { status: 'valid' as const, q: parsed.data.q };
+    : { status: 'valid' as const, q: parsed.data.q, page: parsed.data.page };
+}
+
+export function searchPageUrl(q: string, page = 1) {
+  const params = new URLSearchParams({ q });
+  if (page !== 1) params.set('page', String(page));
+  return '/search?' + params;
 }

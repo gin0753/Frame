@@ -23,6 +23,37 @@ import {
 } from '@/lib/server/catalog';
 import DiscoverPage from './page';
 import { DiscoverResults } from './discover-results';
+
+it('retains the complete later-page tuple in Retry and page-one recovery', async () => {
+  const query = {
+    genreId: '18',
+    yearFrom: '1990',
+    sort: 'rated' as const,
+    page: '4',
+  };
+  vi.mocked(discoverMovies).mockRejectedValueOnce(new CatalogReadError(429));
+  const failure = render(
+    await DiscoverResults({ query, dictionary: { current: null } }),
+  );
+  expect(failure.container.querySelector('input[name="page"]')).toHaveValue(
+    '4',
+  );
+  expect(failure.container.querySelector('input[name="genreId"]')).toHaveValue(
+    '18',
+  );
+  failure.unmount();
+  vi.mocked(discoverMovies).mockResolvedValueOnce({
+    page: 4,
+    pageSize: 20,
+    totalPages: 3,
+    totalResults: 60,
+    items: [],
+  });
+  render(await DiscoverResults({ query, dictionary: { current: null } }));
+  expect(
+    screen.getByRole('link', { name: 'Return to page 1' }),
+  ).toHaveAttribute('href', '/discover?genreId=18&yearFrom=1990&sort=rated');
+});
 const empty = {
   page: 1,
   pageSize: 20 as const,
@@ -83,7 +114,7 @@ it('rejects invalid tuples, duplicates and unknowns while preserving sibling fie
     { genreId: ['18', '28'] },
     { sort: 'bad' },
     { unknown: 'x' },
-    { page: '2' },
+    { page: '501' },
   ])
     expect(parseDiscoverParams(p).query).toBeNull();
   expect(
@@ -231,9 +262,7 @@ it('successful movies render immediately without an optional dictionary, omit mi
     screen.getByRole('link', { name: 'Explore Synthetic film on TMDB' }),
   ).toBeVisible();
   expect(screen.getByText('Showing 1 film.')).toBeVisible();
-  expect(
-    screen.getByText('Only the first page is available in this release.'),
-  ).toBeVisible();
+  expect(screen.getByText('Page 1 of 2')).toBeVisible();
 });
 
 it('observes a late optional dictionary rejection after the page shell and empty results resolve', async () => {

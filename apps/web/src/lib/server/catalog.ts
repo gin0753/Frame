@@ -59,8 +59,8 @@ async function readCatalog<T>(
     throw new CatalogReadError(503);
   }
 }
-export function searchMovies(q: string) {
-  const parsed = searchQuerySchema.parse({ q });
+export function searchMovies(q: string, page = '1') {
+  const parsed = searchQuerySchema.parse({ q, page });
   return readCatalog(
     `${catalogContracts.search.path}?${new URLSearchParams(parsed)}`,
     catalogContracts.search.response,

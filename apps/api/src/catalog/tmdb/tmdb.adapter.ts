@@ -11,6 +11,7 @@ import {
   tmdbDetailSchema,
   tmdbGenresSchema,
   tmdbMoviesSchema,
+  tmdbDiscoveryMoviesSchema,
   tmdbImageConfigSchema,
 } from './tmdb.schemas';
 
@@ -72,12 +73,15 @@ export class TmdbAdapter {
     return this.read('/movie/popular', tmdbMoviesSchema, options, { page });
   }
 
-  search(query: string, options: ReadOptions = {}) {
-    const parsed = searchQuerySchema.safeParse({ q: query });
+  search(query: string, options: ReadOptions & { page?: number } = {}) {
+    const parsed = searchQuerySchema.safeParse({
+      q: query,
+      page: String(options.page ?? 1),
+    });
     if (!parsed.success) throw new TmdbError('INVALID_REQUEST');
-    return this.read('/search/movie', tmdbMoviesSchema, options, {
+    return this.read('/search/movie', tmdbDiscoveryMoviesSchema, options, {
       query: parsed.data.q,
-      page: 1,
+      page: Number(parsed.data.page),
       include_adult: 'false',
     });
   }
@@ -85,8 +89,8 @@ export class TmdbAdapter {
     const parsed = discoverQuerySchema.safeParse(query);
     if (!parsed.success) throw new TmdbError('INVALID_REQUEST');
     const { genreId, yearFrom, yearTo, sort } = parsed.data;
-    return this.read('/discover/movie', tmdbMoviesSchema, options, {
-      page: 1,
+    return this.read('/discover/movie', tmdbDiscoveryMoviesSchema, options, {
+      page: Number(parsed.data.page),
       include_adult: 'false',
       include_video: 'false',
       sort_by: {

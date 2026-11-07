@@ -6,6 +6,8 @@ import { movieImageFallbacks } from '@/features/movies/data/image-fallbacks';
 import { discoverSortLabels } from '@/features/movies/data/discover-params';
 import { CatalogReadError, discoverMovies } from '@/lib/server/catalog';
 import styles from './discover.module.css';
+import { MoviePagination } from '@/features/movies/components/movie-pagination';
+import { discoverPageUrl } from '@/features/movies/data/discover-params';
 
 export function DiscoverRetry({ query }: { query: DiscoverQuery }) {
   return (
@@ -82,11 +84,7 @@ export async function DiscoverResults({
             Showing {page.items.length}{' '}
             {page.items.length === 1 ? 'film' : 'films'}.
           </p>
-          {page.totalPages > 1 && (
-            <p className={styles.summary}>
-              Only the first page is available in this release.
-            </p>
-          )}
+
           <MovieResultsGrid
             movies={page.items.map(
               (movie) =>
@@ -96,10 +94,37 @@ export async function DiscoverResults({
         </>
       ) : (
         <div className={styles.state}>
-          <p>No films match these filters.</p>
-          <p>Try another genre or broaden the release years.</p>
-          <a href="/discover">Reset filters</a>
+          {page.page === 1 && page.totalResults === 0 ? (
+            <>
+              <p>No films match these filters.</p>
+              <p>Try another genre or broaden the release years.</p>
+              <a href="/discover">Reset filters</a>
+            </>
+          ) : (
+            <>
+              <p>
+                {page.page > page.totalPages
+                  ? 'This page is no longer available for these filters.'
+                  : 'No films were returned on this page.'}
+              </p>
+              <a href={discoverPageUrl(query)}>Return to page 1</a>
+            </>
+          )}
         </div>
+      )}
+      {page.page <= page.totalPages && (
+        <MoviePagination
+          currentPage={page.page}
+          totalPages={page.totalPages}
+          previousUrl={
+            page.page > 1 ? discoverPageUrl(query, page.page - 1) : undefined
+          }
+          nextUrl={
+            page.page < page.totalPages
+              ? discoverPageUrl(query, page.page + 1)
+              : undefined
+          }
+        />
       )}
     </section>
   );

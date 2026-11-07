@@ -80,7 +80,7 @@ test(
         });
       },
     });
-    // Sparse pages must report matching provider totals under existing provider validation.
+    // These sparse terminal fixtures remain useful regressions; pagination.test.cjs also covers sparse nonterminal pages.
     const adapter = app.get(TmdbAdapter);
     for (const method of ['discover', 'genres', 'imageConfiguration'])
       adapter[method] = fake[method].bind(fake);

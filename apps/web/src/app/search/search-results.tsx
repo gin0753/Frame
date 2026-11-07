@@ -8,8 +8,16 @@ import {
   searchMovies,
 } from '@/lib/server/catalog';
 import styles from './search.module.css';
-export async function SearchResults({ q }: { q: string }) {
-  const searchRequest = Promise.allSettled([searchMovies(q)]);
+import { MoviePagination } from '@/features/movies/components/movie-pagination';
+import { searchPageUrl } from '@/features/movies/data/search-params';
+export async function SearchResults({
+  q,
+  requestedPage = '1',
+}: {
+  q: string;
+  requestedPage?: string;
+}) {
+  const searchRequest = Promise.allSettled([searchMovies(q, requestedPage)]);
   // Observe rejection immediately, even when Search returns before enrichment.
   const genresRequest = getCatalogGenres().catch(() => ({ items: [] }));
   const [result] = await searchRequest;
@@ -31,6 +39,7 @@ export async function SearchResults({ q }: { q: string }) {
         {/* A native GET submission bypasses the client router cache, including same-URL retries. */}
         <form action="/search" method="get">
           <input type="hidden" name="q" value={q} />
+          <input type="hidden" name="page" value={requestedPage} />
           <Button variant="secondary" type="submit">
             Try again
           </Button>
@@ -53,11 +62,7 @@ export async function SearchResults({ q }: { q: string }) {
             Showing {page.items.length}{' '}
             {page.items.length === 1 ? 'film' : 'films'}.
           </p>
-          {page.totalPages > 1 && (
-            <p className={styles.summary}>
-              Only the first page is available in this release.
-            </p>
-          )}
+
           <MovieResultsGrid
             movies={page.items.map(
               (summary) =>
@@ -67,9 +72,36 @@ export async function SearchResults({ q }: { q: string }) {
         </>
       ) : (
         <div className={styles.state}>
-          <p>No films found for “{q}”.</p>
-          <p>Try another title or check the spelling.</p>
+          {page.page === 1 && page.totalResults === 0 ? (
+            <>
+              <p>No films found for &ldquo;{q}&rdquo;.</p>
+              <p>Try another title or check the spelling.</p>
+            </>
+          ) : (
+            <>
+              <p>
+                {page.page > page.totalPages
+                  ? 'This page is no longer available for this search.'
+                  : 'No films were returned on this page.'}
+              </p>
+              <a href={searchPageUrl(q)}>Return to page 1</a>
+            </>
+          )}
         </div>
+      )}
+      {page.page <= page.totalPages && (
+        <MoviePagination
+          currentPage={page.page}
+          totalPages={page.totalPages}
+          previousUrl={
+            page.page > 1 ? searchPageUrl(q, page.page - 1) : undefined
+          }
+          nextUrl={
+            page.page < page.totalPages
+              ? searchPageUrl(q, page.page + 1)
+              : undefined
+          }
+        />
       )}
     </section>
   );

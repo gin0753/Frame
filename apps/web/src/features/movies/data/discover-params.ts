@@ -1,4 +1,4 @@
-import { discoverQuerySchema } from '@frame/contracts';
+import { discoverQuerySchema, DiscoverQuery } from '@frame/contracts';
 export const discoverSortLabels = {
   popular: 'Most Popular',
   newest: 'Newest release dates, including upcoming',
@@ -37,8 +37,19 @@ export function parseDiscoverParams(
               : key === 'sort'
                 ? 'Choose an available sort.'
                 : key === 'page'
-                  ? 'Only page 1 is available.'
+                  ? 'Use one whole page number from 1 to 500, without padding.'
                   : 'Use supported filters once each; remove unknown parameters.';
     }
   return { fields, errors, query: parsed.success ? parsed.data : null };
+}
+
+export function discoverPageUrl(query: DiscoverQuery, page = 1) {
+  const params = new URLSearchParams();
+  for (const key of ['genreId', 'yearFrom', 'yearTo', 'sort'] as const) {
+    const value = query[key];
+    if (value && !(key === 'sort' && value === 'popular'))
+      params.set(key, value);
+  }
+  if (page !== 1) params.set('page', String(page));
+  return '/discover' + (params.size ? '?' + params : '');
 }

@@ -9,6 +9,7 @@ import {
   tmdbDetailSchema,
   tmdbGenreSchema,
   tmdbMoviesSchema,
+  tmdbDiscoveryMoviesSchema,
   tmdbImageConfigSchema,
 } from './tmdb/tmdb.schemas';
 import type {
@@ -104,14 +105,17 @@ export function normalizeMoviePage(
   config: TmdbImageConfig,
   requestedPage: number,
   preserveProviderTotals = false,
+  discoveryCompatibility = false,
 ) {
-  const page = tmdbMoviesSchema.parse(input);
+  const page = (
+    discoveryCompatibility ? tmdbDiscoveryMoviesSchema : tmdbMoviesSchema
+  ).parse(input);
   if (page.page !== requestedPage) throw new TmdbError('UNEXPECTED_RESPONSE');
   return moviePageSchema.parse({
     items: page.results.map((movie) => normalizeMovieSummary(movie, config)),
     page: page.page,
     pageSize: 20,
-    // Page-one Trending/Search report upstream totals without promising further pages.
+    // Page-one Trending report upstream totals without promising further pages.
     totalPages: preserveProviderTotals
       ? page.total_pages
       : Math.min(page.total_pages, 500),

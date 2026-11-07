@@ -16,6 +16,31 @@ import {
 import SearchPage, { metadata } from './page';
 import { SearchResults } from './search-results';
 
+it('preserves later-page retry and unavailable-page recovery without awaiting Genres', async () => {
+  vi.mocked(searchMovies).mockRejectedValueOnce(new CatalogReadError(429));
+  const failure = render(
+    await SearchResults({ q: 'Alien', requestedPage: '2' }),
+  );
+  expect(failure.container.querySelector('input[name="page"]')).toHaveValue(
+    '2',
+  );
+  failure.unmount();
+  vi.mocked(searchMovies).mockResolvedValueOnce({
+    page: 4,
+    pageSize: 20,
+    totalPages: 3,
+    totalResults: 60,
+    items: [],
+  });
+  render(await SearchResults({ q: 'Alien', requestedPage: '4' }));
+  expect(
+    screen.getByRole('link', { name: 'Return to page 1' }),
+  ).toHaveAttribute('href', '/search?q=Alien');
+  expect(
+    screen.queryByRole('navigation', { name: 'Movie result pages' }),
+  ).toBeNull();
+});
+
 beforeEach(() => {
   vi.resetAllMocks();
   vi.mocked(getCatalogGenres).mockResolvedValue({ items: [] });
@@ -74,7 +99,7 @@ it.each([503, 429, 'empty'] as const)(
     process.on('unhandledRejection', unhandled);
     try {
       const result = SearchResults({ q: 'Alien' });
-      expect(searchMovies).toHaveBeenCalledExactlyOnceWith('Alien');
+      expect(searchMovies).toHaveBeenCalledExactlyOnceWith('Alien', '1');
       expect(getCatalogGenres).toHaveBeenCalledTimes(1);
       if (outcome === 'empty') search.resolve(page);
       else search.reject(new CatalogReadError(outcome));
@@ -162,11 +187,12 @@ it('validates URL state without ignoring duplicates, unsupported keys or pages',
   expect(parseSearchParams({ q: ' \t ' }).status).toBe('initial');
   expect(parseSearchParams({ q: ' Amélie  東京 ' })).toEqual({
     status: 'valid',
+    page: '1',
     q: 'Amélie  東京',
   });
   for (const input of [
     { q: ['a', 'b'] },
-    { page: '2' },
+    { page: '501' },
     { q: 'a', genreId: '18' },
     { q: 'a'.repeat(201) },
   ])
@@ -194,7 +220,9 @@ it('renders an initial native accessible GET form without catalog requests and n
 });
 it('associates invalid query feedback and avoids provider work', async () => {
   render(
-    await SearchPage({ searchParams: Promise.resolve({ q: 'a', page: '2' }) }),
+    await SearchPage({
+      searchParams: Promise.resolve({ q: 'a', page: '501' }),
+    }),
   );
   expect(screen.getByRole('searchbox')).toHaveAttribute('aria-invalid', 'true');
   expect(screen.getByRole('searchbox')).toHaveAccessibleDescription(
@@ -227,7 +255,7 @@ it.each([429, 503])(
     expect(form?.querySelector('input')).toHaveValue('Amélie & 東京');
   },
 );
-it('preserves metadata/destination and first-page wording when the dictionary fails', async () => {
+it('preserves metadata/destination and pagination when the dictionary fails', async () => {
   vi.mocked(getCatalogGenres).mockRejectedValue(new Error('unavailable'));
   vi.mocked(searchMovies).mockResolvedValue({
     ...page,
@@ -258,7 +286,5 @@ it('preserves metadata/destination and first-page wording when the dictionary fa
     screen.getByRole('link', { name: 'Explore Long title on TMDB' }),
   ).toHaveAttribute('href', 'https://www.themoviedb.org/movie/42');
   expect(screen.getByText('Showing 1 film.')).toBeVisible();
-  expect(
-    screen.getByText('Only the first page is available in this release.'),
-  ).toBeVisible();
+  expect(screen.getByText('Page 1 of 2')).toBeVisible();
 });

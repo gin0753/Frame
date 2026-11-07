@@ -19,7 +19,7 @@ test('search trims edges, preserves case/internal whitespace and validates bound
     { q: 'a'.repeat(201) },
     { q: ['a', 'b'] },
     { q: 'a', genreId: '18' },
-    ...['2', '01', '', '0', ['1', '1']].map((page) => ({ q: 'a', page })),
+    ...['501', '01', '', '0', ['1', '1']].map((page) => ({ q: 'a', page })),
   ]) {
     assert.equal(searchQuerySchema.safeParse(input).success, false);
   }
@@ -31,17 +31,19 @@ test('search trims edges, preserves case/internal whitespace and validates bound
     totalResults: 0,
   });
 });
-test('search OpenAPI exposes required bounded query and page-one policy', async () => {
+test('search OpenAPI exposes required bounded query and accessible pagination policy', async () => {
   const doc = await checkOpenApi();
   const route = doc.paths[catalogContracts.search.path].get;
   const q = route.parameters.find((p) => p.name === 'q');
   assert.equal(q.required, true);
   assert.equal(q.schema.minLength, 1);
   assert.equal(q.schema.maxLength, 200);
-  assert.deepEqual(
-    route.parameters.find((p) => p.name === 'page').schema.enum,
-    ['1'],
+  assert.ok(
+    new RegExp(
+      route.parameters.find((p) => p.name === 'page').schema.pattern,
+    ).test('500'),
   );
-  assert.match(route.description, /Only page 1/);
+  assert.match(route.description, /Pages 1-500/);
+  assert.match(route.description, /500 pages\/10000 results/);
   assert.ok(route.responses[429]);
 });

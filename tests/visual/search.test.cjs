@@ -68,7 +68,7 @@ test(
         });
       },
     });
-    // Sparse pages must report matching provider totals under existing provider validation.
+    // These sparse terminal fixtures remain useful regressions; pagination.test.cjs also covers sparse nonterminal pages.
     const adapter = app.get(TmdbAdapter);
     for (const method of ['search', 'genres', 'imageConfiguration'])
       adapter[method] = fake[method].bind(fake);
@@ -168,7 +168,7 @@ test(
           path: path.join(evidence, `${width}-initial.png`),
           fullPage: true,
         });
-        await page.goto(origin + '/search?q=a&page=2');
+        await page.goto(origin + '/search?q=a&page=501');
         await expect(page.getByRole('searchbox')).toHaveAttribute(
           'aria-invalid',
           'true',

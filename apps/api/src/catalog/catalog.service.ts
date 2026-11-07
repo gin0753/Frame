@@ -174,19 +174,20 @@ export class CatalogService {
       signal,
     );
   }
-  search(query: string, signal?: AbortSignal) {
-    const { q } = searchQuerySchema.parse({ q: query });
+  search(query: string, signal?: AbortSignal, page = 1) {
+    const { q } = searchQuerySchema.parse({ q: query, page: String(page) });
     return this.read(
       (caller) =>
         this.coordinator.get(
-          catalogKey('search', [q, 1, 'adult:false']),
+          catalogKey('search', [q, page, 'adult:false']),
           'search',
           moviePageSchema,
           (shared) =>
             this.movieRead(
-              (signal) => this.tmdb.search(q, { signal }),
-              // Page-one policy: preserve provider totals, without Popular-specific caps.
-              (movie, config) => normalizeMoviePage(movie, config, 1, true),
+              (signal) => this.tmdb.search(q, { signal, page }),
+              // Search follows the frozen accessible-range totals policy.
+              (movie, config) =>
+                normalizeMoviePage(movie, config, page, false, true),
               shared,
             ),
           caller,
@@ -197,6 +198,7 @@ export class CatalogService {
   discover(input: DiscoverQuery, signal?: AbortSignal) {
     const query = discoverQuerySchema.parse(input);
     const { genreId, yearFrom, yearTo, sort } = query;
+    const page = Number(query.page);
     return this.read(
       (caller) =>
         this.coordinator.get(
@@ -205,7 +207,7 @@ export class CatalogService {
             yearFrom || '',
             yearTo || '',
             sort,
-            1,
+            page,
             'adult:false',
             'video:false',
             sort === 'rated' ? 'votes:100' : 'votes:unset',
@@ -226,7 +228,8 @@ export class CatalogService {
                 }
                 return this.tmdb.discover(query, { signal });
               },
-              (movie, config) => normalizeMoviePage(movie, config, 1),
+              (movie, config) =>
+                normalizeMoviePage(movie, config, page, false, true),
               shared,
             ),
           caller,

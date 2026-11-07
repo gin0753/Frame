@@ -116,7 +116,10 @@ export type GenresResponse = z.infer<typeof genresResponseSchema>;
 // HTTP strings stay strings in OpenAPI; pipes return the same validated representation.
 export const searchQuerySchema = z.strictObject({
   q: z.string().trim().min(1).max(200),
-  page: z.literal('1').default('1'),
+  page: z
+    .string()
+    .regex(/^(?:[1-9]|[1-9][0-9]|[1-4][0-9]{2}|500)$/)
+    .default('1'),
 });
 export type SearchQuery = z.infer<typeof searchQuerySchema>;
 export const trendingQuerySchema = z.strictObject({
@@ -168,7 +171,10 @@ export const discoverQuerySchema = z
       .describe(
         'popular: popularity.desc; newest: primary_release_date.desc including upcoming; rated: vote_average.desc with vote_count.gte=100.',
       ),
-    page: z.literal('1').default('1'),
+    page: z
+      .string()
+      .regex(/^(?:[1-9]|[1-9][0-9]|[1-4][0-9]{2}|500)$/)
+      .default('1'),
   })
   .refine(
     (query) =>
