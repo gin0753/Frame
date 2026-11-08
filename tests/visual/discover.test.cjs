@@ -18,7 +18,13 @@ const a11yRequire = createRequire(
 const axePath = a11yRequire.resolve('axe-core');
 
 test(
-  'production Discover: seven widths, filters, failures, native navigation and accessibility',
+  process.env.FRAME_STAGE44_ACCESSIBILITY === 'true'
+    ? 'Phase C: native 200% zoom, 320px reflow boundary and forced-colors'
+    : process.env.FRAME_STAGE44_STREAMING === 'true'
+      ? 'Stage 4.4: selected Genre streaming at two widths'
+      : process.env.FRAME_STAGE44_PERFORMANCE === 'true'
+        ? 'Stage 4.4: supplementary route performance at two widths'
+        : 'production Discover: seven widths, filters, failures, native navigation and accessibility',
   { timeout: 360000 },
   async () => {
     const { createApp } = apiRequire('./dist/main');
@@ -27,6 +33,18 @@ test(
     const calls = [];
     let mode = 'full';
     let dictionaryMode = 'normal';
+    let dictionaryGate;
+    let releaseDictionary;
+    const holdDictionary = () => {
+      dictionaryMode = 'held';
+      dictionaryGate = new Promise((resolve) => {
+        releaseDictionary = resolve;
+      });
+    };
+    const finishDictionary = (failed) => {
+      dictionaryMode = 'normal';
+      releaseDictionary?.(failed);
+    };
     const config = {
       images: {
         secure_base_url: 'https://image.tmdb.org/t/p/',
@@ -40,6 +58,8 @@ test(
         calls.push(url.pathname + url.search);
         if (url.pathname === '/3/configuration') return Response.json(config);
         if (url.pathname === '/3/genre/movie/list') {
+          if (dictionaryMode === 'held' && (await dictionaryGate))
+            return new Response(null, { status: 500 });
           if (dictionaryMode === 'slow')
             await new Promise((r) => setTimeout(r, 1200));
           if (dictionaryMode === 'failed')
@@ -52,6 +72,34 @@ test(
                 name: 'Action and a deliberately long genre option label',
               },
             ],
+          });
+        }
+        if (
+          process.env.FRAME_STAGE44_PERFORMANCE === 'true' ||
+          process.env.FRAME_STAGE44_ACCESSIBILITY === 'true'
+        ) {
+          assert.ok(
+            ['/3/discover/movie', '/3/search/movie'].includes(url.pathname),
+          );
+          if (mode === 'slow') await new Promise((r) => setTimeout(r, 700));
+          if (mode === 'unavailable')
+            return new Response(null, { status: 500 });
+          const count = mode === 'empty' ? 0 : 20;
+          const page = Number(url.searchParams.get('page') || 1);
+          return Response.json({
+            page,
+            total_pages: count ? 3 : 0,
+            total_results: count ? 60 : 0,
+            results: Array.from({ length: count }, (_, i) => ({
+              id: page * 100 + i + 1,
+              title: 'Synthetic page ' + page + ' film ' + (i + 1),
+              vote_count: 200,
+              genre_ids: [18],
+              release_date: '2020-01-01',
+              poster_path: '/synthetic.jpg',
+              backdrop_path: null,
+              overview: null,
+            })),
           });
         }
         assert.equal(url.pathname, '/3/discover/movie');
@@ -82,7 +130,15 @@ test(
     });
     // These sparse terminal fixtures remain useful regressions; pagination.test.cjs also covers sparse nonterminal pages.
     const adapter = app.get(TmdbAdapter);
-    for (const method of ['discover', 'genres', 'imageConfiguration'])
+    for (const method of [
+      'discover',
+      'genres',
+      'imageConfiguration',
+      ...(process.env.FRAME_STAGE44_PERFORMANCE === 'true' ||
+      process.env.FRAME_STAGE44_ACCESSIBILITY === 'true'
+        ? ['search']
+        : []),
+    ])
       adapter[method] = fake[method].bind(fake);
     let server;
     let browser;
@@ -90,7 +146,13 @@ test(
     const output = [];
     const evidence = path.join(
       root,
-      'tmp/stage42',
+      process.env.FRAME_STAGE44_ACCESSIBILITY === 'true'
+        ? 'tmp/stage44-phasec/accessibility'
+        : process.env.FRAME_STAGE44_STREAMING === 'true'
+          ? 'tmp/stage44/streaming'
+          : process.env.FRAME_STAGE44_PERFORMANCE === 'true'
+            ? 'tmp/stage44/performance'
+            : 'tmp/stage42',
       new Date().toISOString().replace(/[:.]/g, '-'),
     );
     try {
@@ -164,6 +226,47 @@ test(
             if (!entry.hadRecentInput) window.__shifts.push(entry.value);
         }).observe({ type: 'layout-shift', buffered: true });
       });
+      if (process.env.FRAME_STAGE44_ACCESSIBILITY === 'true') {
+        await require('./stage44-streaming.cjs').bounded({
+          browser,
+          origin,
+          evidence,
+          axePath,
+          setMode(value) {
+            mode = value;
+          },
+        });
+        return;
+      }
+      if (process.env.FRAME_STAGE44_PERFORMANCE === 'true') {
+        await require('./stage44-performance.cjs')({
+          browser,
+          origin,
+          evidence,
+          calls,
+          axePath,
+          setMode(value) {
+            mode = value;
+          },
+          setDictionary(value) {
+            dictionaryMode = value;
+          },
+        });
+        return;
+      }
+      if (process.env.FRAME_STAGE44_STREAMING === 'true') {
+        await require('./stage44-streaming.cjs')({
+          page,
+          browser,
+          origin,
+          evidence,
+          calls,
+          hold: holdDictionary,
+          release: finishDictionary,
+          axePath,
+        });
+        return;
+      }
       const report = { widths: [], states: [], axe: [], cls: [], requests: [] };
       const primeArtwork = async () => {
         await page.evaluate(async () => {

@@ -96,7 +96,11 @@ function cls(shifts) {
     start = 0,
     last = 0;
   for (const entry of shifts.filter((s) => !s.recentInput)) {
-    if (sum === 0 || entry.start - last > 1000 || entry.start - start > 5000) {
+    if (
+      sum === 0 ||
+      entry.start - last >= 1000 ||
+      entry.start - start >= 5000
+    ) {
       sum = 0;
       start = entry.start;
     }
@@ -121,6 +125,14 @@ module.exports = async function homepageAcceptance({
   );
   await fs.mkdir(evidence, { recursive: true });
   const report = {
+    ...(process.env.FRAME_STAGE44 === 'true'
+      ? {
+          provenance: require('./stage44-evidence.cjs').provenance(
+            __filename,
+            browser,
+          ),
+        }
+      : {}),
     browser: browser.version(),
     platform: process.platform,
     environment: {
@@ -718,3 +730,5 @@ module.exports = async function homepageAcceptance({
     'production Homepage acceptance checks',
   );
 };
+// Expose the pure calculation for focused verification without a browser run.
+module.exports.cls = cls;
