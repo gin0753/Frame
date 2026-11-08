@@ -67,6 +67,7 @@ test(
           return Response.json({
             genres: [
               { id: 18, name: 'Drama' },
+              { id: 35, name: 'Comedy' },
               {
                 id: 28,
                 name: 'Action and a deliberately long genre option label',
@@ -144,17 +145,19 @@ test(
     let browser;
     let exit;
     const output = [];
-    const evidence = path.join(
-      root,
-      process.env.FRAME_STAGE44_ACCESSIBILITY === 'true'
-        ? 'tmp/stage44-phasec/accessibility'
-        : process.env.FRAME_STAGE44_STREAMING === 'true'
-          ? 'tmp/stage44/streaming'
-          : process.env.FRAME_STAGE44_PERFORMANCE === 'true'
-            ? 'tmp/stage44/performance'
-            : 'tmp/stage42',
-      new Date().toISOString().replace(/[:.]/g, '-'),
-    );
+    const evidence =
+      process.env.FRAME_DISCOVER_EVIDENCE_DIRECTORY ||
+      path.join(
+        root,
+        process.env.FRAME_STAGE44_ACCESSIBILITY === 'true'
+          ? 'tmp/stage44-phasec/accessibility'
+          : process.env.FRAME_STAGE44_STREAMING === 'true'
+            ? 'tmp/stage44/streaming'
+            : process.env.FRAME_STAGE44_PERFORMANCE === 'true'
+              ? 'tmp/stage44/performance'
+              : 'tmp/stage42',
+        new Date().toISOString().replace(/[:.]/g, '-'),
+      );
     try {
       await app.listen(0, '127.0.0.1');
       const socket = net.createServer();
@@ -267,7 +270,102 @@ test(
         });
         return;
       }
-      const report = { widths: [], states: [], axe: [], cls: [], requests: [] };
+      const report = {
+        widths: [],
+        states: [],
+        axe: [],
+        cls: [],
+        requests: [],
+        layouts: [],
+      };
+      const inspectLayout = async (width, state) => {
+        await page.evaluate(() => document.fonts.ready);
+        const layout = await page.evaluate(() => {
+          const form = document.querySelector(
+            'form[aria-label="Discover filters"]',
+          );
+          const rect = (el) => {
+            const r = el.getBoundingClientRect();
+            return {
+              x: r.x,
+              y: r.y,
+              width: r.width,
+              height: r.height,
+              bottom: r.bottom,
+            };
+          };
+          const controls = [
+            ...form.querySelectorAll('input[type="text"],select,button,a'),
+          ].map((el) => {
+            const style = getComputedStyle(el);
+            const text =
+              el.tagName === 'SELECT' ? el.selectedOptions[0]?.text : el.value;
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            ctx.font = style.font;
+            return {
+              id: el.id || el.textContent.trim(),
+              ...rect(el),
+              font: parseFloat(style.fontSize),
+              text,
+              textWidth: ctx.measureText(text || '').width,
+              available:
+                el.clientWidth -
+                parseFloat(style.paddingLeft) -
+                parseFloat(style.paddingRight) -
+                (el.tagName === 'SELECT' ? 24 : 0),
+            };
+          });
+          const results = document.querySelector('main > div:last-child');
+          return {
+            controls,
+            form: rect(form),
+            results: rect(results),
+            gap:
+              results.getBoundingClientRect().top -
+              form.getBoundingClientRect().bottom,
+            overflow:
+              document.documentElement.scrollWidth >
+              document.documentElement.clientWidth,
+            columns: getComputedStyle(form).gridTemplateColumns,
+          };
+        });
+        assert.equal(layout.overflow, false);
+        assert.ok(Math.abs(layout.gap - 24) < 1);
+        assert.ok(layout.controls.every((c) => c.height >= 48 && c.font >= 16));
+        assert.ok(
+          layout.controls
+            .filter((c) => c.id.startsWith('discover-'))
+            .every((c) => c.textWidth <= c.available),
+          JSON.stringify(layout),
+        );
+        const byId = (id) => layout.controls.find((c) => c.id === id);
+        const from = byId('discover-yearFrom'),
+          to = byId('discover-yearTo'),
+          sort = byId('discover-sort');
+        assert.ok(Math.abs(from.width - to.width) < 1 && from.y === to.y);
+        assert.ok(from.width >= 120);
+        if (width >= 768) {
+          assert.ok(
+            Math.abs(from.y - byId('discover-genre').y) < 1,
+            JSON.stringify(layout),
+          );
+          assert.ok(Math.abs(sort.y - byId('Apply').y) < 1);
+          assert.ok(Math.abs(sort.y - byId('Reset').y) < 1);
+        }
+        if (width >= 1024) assert.ok(Math.abs(from.y - sort.y) < 1);
+        await page.getByLabel('From year', { exact: true }).focus();
+        assert.equal(
+          await page
+            .getByLabel('From year', { exact: true })
+            .evaluate((el) => getComputedStyle(el).outlineStyle),
+          'solid',
+        );
+        report.layouts.push({ width, state, ...layout });
+        await page.screenshot({
+          path: path.join(evidence, `${width}-polish-${state}.png`),
+        });
+      };
       const primeArtwork = async () => {
         await page.evaluate(async () => {
           const images = Array.from(document.querySelectorAll('img'));
@@ -286,6 +384,13 @@ test(
         await page.goto(origin + '/discover');
         await expect(page.locator('.movie-card')).toHaveCount(20);
         await expect(page.getByLabel('Genre', { exact: true })).toBeEnabled();
+        await expect(
+          page.getByRole('heading', {
+            name: 'Films to discover — 20 films',
+            exact: true,
+          }),
+        ).toBeVisible();
+        await inspectLayout(width, 'default');
         await expect(
           page.locator('.desktop-nav a[href="/discover"]'),
         ).toHaveAttribute('aria-current', 'page');
@@ -356,7 +461,7 @@ test(
         await page.getByRole('button', { name: 'Apply', exact: true }).click();
         await expect(page.locator('.movie-card')).toHaveCount(20);
         await expect(
-          page.getByText(/Drama.*1990.*1999.*Highest TMDB Rated/),
+          page.getByText(/Drama.*1990.*1999.*Top Rated/),
         ).toBeVisible();
         assert.equal(new URL(page.url()).searchParams.get('sort'), 'rated');
         await page.reload();
@@ -370,6 +475,18 @@ test(
           path: path.join(evidence, width + '-filtered.png'),
           fullPage: true,
         });
+        await inspectLayout(width, 'year-range');
+        await page.goto(
+          origin + '/discover?genreId=35&yearFrom=&yearTo=&sort=newest',
+        );
+        await expect(page.getByLabel('Genre', { exact: true })).toHaveValue(
+          '35',
+        );
+        await expect(
+          page.getByText('Comedy · Newest', { exact: true }),
+        ).toBeVisible();
+        await expect(page.locator('.movie-card')).toHaveCount(20);
+        await inspectLayout(width, 'comedy-newest');
         for (const sort of ['popular', 'newest', 'rated']) {
           await page.goto(origin + '/discover?sort=' + sort);
           await expect(page.getByLabel('Sort', { exact: true })).toHaveValue(
@@ -393,6 +510,7 @@ test(
           ).toBeVisible();
           assert.equal(movieCalls(), before);
           if (query === 'yearFrom=abc') {
+            await inspectLayout(width, 'invalid');
             await page.addScriptTag({ path: axePath });
             const invalidAxe = await page.evaluate(() =>
               window.axe.run(document, {
@@ -448,6 +566,7 @@ test(
             false,
           );
           report.states.push({ width, state });
+          if (state !== 'sparse') await inspectLayout(width, state);
           if (['empty', 'unavailable'].includes(state)) {
             await page.addScriptTag({ path: axePath });
             const stateAxe = await page.evaluate(() =>
@@ -475,6 +594,8 @@ test(
         await page.goto(origin + '/discover');
         await expect(page.locator('.movie-card')).toHaveCount(20);
         await expect(page.getByLabel('Genre', { exact: true })).toBeDisabled();
+        await expect(page.locator('#genre-availability')).toBeVisible();
+        await inspectLayout(width, 'genre-unavailable');
         await page.goto(origin + '/discover?genreId=18');
         await expect(
           page.getByRole('heading', {
@@ -498,6 +619,7 @@ test(
         mode = 'slow';
         await page.goto(origin + '/discover', { waitUntil: 'commit' });
         await expect(page.getByRole('status')).toHaveText('Loading films…');
+        await inspectLayout(width, 'loading');
         if ([393, 1440].includes(width))
           await page.screenshot({
             path: path.join(evidence, width + '-loading.png'),

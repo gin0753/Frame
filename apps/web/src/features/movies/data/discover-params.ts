@@ -1,8 +1,8 @@
 import { discoverQuerySchema, DiscoverQuery } from '@frame/contracts';
 export const discoverSortLabels = {
   popular: 'Most Popular',
-  newest: 'Newest release dates, including upcoming',
-  rated: 'Highest TMDB Rated · 100+ votes',
+  newest: 'Newest',
+  rated: 'Top Rated',
 } as const;
 export function parseDiscoverParams(
   params: Record<string, string | string[] | undefined>,

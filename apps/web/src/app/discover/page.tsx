@@ -69,9 +69,7 @@ async function GenreOptions({
           }
         >
           <option value={selected}>
-            {selected
-              ? `Genre ID ${selected}`
-              : 'Genres temporarily unavailable'}
+            {selected ? `Genre ID ${selected}` : 'Genres unavailable'}
           </option>
         </select>
         {selected && <input type="hidden" name="genreId" value={selected} />}
@@ -140,41 +138,42 @@ export default async function DiscoverPage({
       <Header context="discover" />
       <main id="main" className={`container-shell ${styles.main}`}>
         <h1 className={styles.title}>Discover films</h1>
-        <p className={styles.description}>
-          Explore films by genre, release year and sort order.
-        </p>
+        <p className={styles.description}>Find your next film.</p>
         <form
           action="/discover"
           method="get"
           aria-label="Discover filters"
           className={styles.form}
         >
-          <div>
+          <div className={styles.field}>
             <label htmlFor="discover-genre">Genre</label>
-            <Suspense
-              fallback={
-                <GenreFallback
+            <div>
+              <Suspense
+                fallback={
+                  <GenreFallback
+                    selected={fields.genreId}
+                    invalid={Boolean(errors.genreId)}
+                  />
+                }
+              >
+                <GenreOptions
+                  request={genresRequest}
                   selected={fields.genreId}
                   invalid={Boolean(errors.genreId)}
                 />
-              }
-            >
-              <GenreOptions
-                request={genresRequest}
-                selected={fields.genreId}
-                invalid={Boolean(errors.genreId)}
-              />
-            </Suspense>
-            {fieldError('genreId')}
+              </Suspense>
+              {fieldError('genreId')}
+            </div>
           </div>
           <fieldset>
-            <legend>Release year</legend>
+            <legend className="sr-only">Release year</legend>
+            <div className={styles.years}>
+              <label htmlFor="discover-yearFrom">From year</label>
+              <label htmlFor="discover-yearTo">To year</label>
+            </div>
             <div className={styles.years}>
               {(['yearFrom', 'yearTo'] as const).map((key) => (
                 <div key={key}>
-                  <label htmlFor={`discover-${key}`}>
-                    {key === 'yearFrom' ? 'From year' : 'To year'}
-                  </label>
                   <input
                     id={`discover-${key}`}
                     name={key}
@@ -191,38 +190,42 @@ export default async function DiscoverPage({
                   {fieldError(key)}
                 </div>
               ))}
+              <p id="year-help" className={`${styles.help} ${styles.yearHelp}`}>
+                Optional · 1800–2100
+              </p>
             </div>
-            <p id="year-help" className={styles.help}>
-              Optional · 1800–2100
-            </p>
           </fieldset>
-          <div>
+          <div className={styles.field}>
             <label htmlFor="discover-sort">Sort</label>
-            <select
-              id="discover-sort"
-              name="sort"
-              defaultValue={fields.sort}
-              aria-invalid={Boolean(errors.sort) || undefined}
-              aria-describedby={
-                errors.sort ? 'sort-error sort-help' : 'sort-help'
-              }
-            >
-              {badSort && <option value={fields.sort}>Unsupported sort</option>}
-              {Object.entries(discoverSortLabels).map(([value, label]) => (
-                <option key={value} value={value}>
-                  {label}
-                </option>
-              ))}
-            </select>
-            <p id="sort-help" className={styles.help}>
-              Newest includes upcoming films. Highest rated includes films with
-              at least 100 TMDB votes.
-            </p>
-            {fieldError('sort')}
+            <div>
+              <select
+                id="discover-sort"
+                name="sort"
+                defaultValue={fields.sort}
+                aria-invalid={Boolean(errors.sort) || undefined}
+                aria-describedby={
+                  errors.sort ? 'sort-error sort-help' : 'sort-help'
+                }
+              >
+                {badSort && (
+                  <option value={fields.sort}>Unsupported sort</option>
+                )}
+                {Object.entries(discoverSortLabels).map(([value, label]) => (
+                  <option key={value} value={value}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+              <p id="sort-help" className={styles.help}>
+                Newest includes upcoming films; Top Rated uses TMDB ratings with
+                100+ votes.
+              </p>
+              {fieldError('sort')}
+            </div>
           </div>
           <div className={styles.actions}>
             <Button type="submit">Apply</Button>
-            <Button variant="secondary" asChild>
+            <Button variant="ghost" asChild>
               <a href="/discover">Reset</a>
             </Button>
           </div>

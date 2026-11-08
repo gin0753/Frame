@@ -9,26 +9,31 @@
   letter-spacing: -0.035em;
 }
 .description {
-  margin-top: 0.75rem;
+  margin-top: 0.5rem;
   font-size: 0.9375rem;
   line-height: 1.7;
   color: var(--text-secondary);
 }
 .form {
-  margin-top: 1.5rem;
+  margin-top: 1.25rem;
   display: grid;
   gap: 1rem;
   align-items: start;
+}
+.field,
+.form fieldset {
+  display: grid;
+  grid-template-rows: auto auto;
+  gap: 0.5rem;
 }
 .form > *,
 .years > * {
   min-width: 0;
 }
-.form label,
-.form legend {
+.form label {
   display: block;
   font-size: 0.875rem;
-  margin-bottom: 0.5rem;
+  line-height: 1.5;
 }
 .form fieldset {
   margin: 0;
@@ -39,14 +44,17 @@
 .years {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.75rem;
+  column-gap: 0.75rem;
+}
+.yearHelp {
+  grid-column: 1 / -1;
 }
 .form input,
 .form select {
   width: 100%;
   min-width: 0;
-  min-height: 48px;
-  padding: 0.75rem 1rem;
+  height: 48px;
+  padding: 0.625rem 0.75rem;
   border: 1px solid var(--stroke);
   border-radius: 6px;
   background: var(--surface);
@@ -59,7 +67,7 @@
   margin-top: 0.5rem;
   color: var(--text-secondary);
   font-size: 0.875rem;
-  line-height: 1.7;
+  line-height: 1.5;
   overflow-wrap: anywhere;
 }
 .error {
@@ -75,7 +83,8 @@
 .actions {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.75rem;
+  column-gap: 0.75rem;
+  row-gap: 0.5rem;
 }
 .actions > * {
   min-height: 48px;
@@ -83,7 +92,20 @@
   font-size: 1rem;
 }
 .results {
-  margin-top: 2rem;
+  margin-top: 1.5rem;
+}
+.resultsHeading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: 0.5rem;
+  row-gap: 0.25rem;
+}
+.count {
+  font-size: 0.9375rem;
+  font-weight: 400;
+  letter-spacing: normal;
+  color: var(--text-secondary);
 }
 .state {
   padding: 1.5rem;
@@ -123,17 +145,21 @@
 }
 @media (min-width: 768px) {
   .main {
-    padding-block: 3rem var(--section-space);
+    padding-block: 2rem var(--section-space);
     min-height: calc(100svh - 88px);
   }
   .form {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
   .actions {
-    padding-top: 1.75rem;
+    /* Match the label line above adjacent controls, including text zoom. */
+    font-size: 0.875rem;
+    line-height: 1.5;
+    grid-template-rows: 1lh auto;
   }
-  .results {
-    margin-top: 3rem;
+  .actions > * {
+    grid-row: 2;
+    align-self: start;
   }
   .state {
     padding: 2rem;
@@ -141,20 +167,10 @@
 }
 @media (min-width: 1024px) {
   .form {
-    grid-template-columns: 1fr 1fr 1.4fr;
+    max-width: 72rem;
+    grid-template-columns: minmax(0, 1fr) 16.5rem minmax(0, 0.85fr) max-content;
   }
   .actions {
-    grid-column: 1 / -1;
-    width: 224px;
-    padding-top: 0;
-  }
-}
-@media (min-width: 1280px) {
-  .form {
-    grid-template-columns: 1fr 1fr 1.4fr 224px;
-  }
-  .actions {
-    grid-column: auto;
-    padding-top: 1.75rem;
+    grid-template-columns: repeat(2, auto);
   }
 }

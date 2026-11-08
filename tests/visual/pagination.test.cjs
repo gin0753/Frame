@@ -81,11 +81,13 @@ test(
     let browser;
     let exit;
     const output = [];
-    const evidence = path.join(
-      root,
-      'tmp/stage43',
-      new Date().toISOString().replace(/[:.]/g, '-'),
-    );
+    const evidence =
+      process.env.FRAME_PAGINATION_EVIDENCE_DIRECTORY ||
+      path.join(
+        root,
+        'tmp/stage43',
+        new Date().toISOString().replace(/[:.]/g, '-'),
+      );
     try {
       await app.listen(0, '127.0.0.1');
       const socket = net.createServer();

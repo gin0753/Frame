@@ -137,6 +137,11 @@ it('default discovery fetches results, renders native GET controls and route-awa
   expect(form).toHaveAttribute('method', 'get');
   expect(screen.getByLabelText('Genre')).toHaveValue('');
   expect(screen.getByLabelText('Sort')).toHaveValue('popular');
+  expect(
+    within(screen.getByLabelText('Sort'))
+      .getAllByRole('option')
+      .map((option) => option.textContent),
+  ).toEqual(['Most Popular', 'Newest', 'Top Rated']);
   expect(screen.getByRole('group', { name: 'Release year' })).toBeVisible();
   expect(within(form).getByRole('link', { name: 'Reset' })).toHaveAttribute(
     'href',
@@ -158,9 +163,7 @@ it('preserves applied values and edits do not change results or fetch until subm
   expect(screen.getByLabelText('From year')).toHaveValue('1990');
   expect(screen.getByLabelText('To year')).toHaveValue('1999');
   expect(screen.getByLabelText('Sort')).toHaveValue('rated');
-  const summary = screen.getByText(
-    'Drama · 1990–1999 · Highest TMDB Rated · 100+ votes',
-  );
+  const summary = screen.getByText('Drama · 1990–1999 · Top Rated');
   expect(summary).toBeVisible();
   await userEvent
     .setup()
@@ -169,7 +172,7 @@ it('preserves applied values and edits do not change results or fetch until subm
   expect(discoverMovies).toHaveBeenCalledTimes(1);
   expect(
     screen.getByText(
-      'Newest includes upcoming films. Highest rated includes films with at least 100 TMDB votes.',
+      'Newest includes upcoming films; Top Rated uses TMDB ratings with 100+ votes.',
     ),
   ).toBeVisible();
 });
@@ -261,7 +264,9 @@ it('successful movies render immediately without an optional dictionary, omit mi
   expect(
     screen.getByRole('link', { name: 'Explore Synthetic film on TMDB' }),
   ).toBeVisible();
-  expect(screen.getByText('Showing 1 film.')).toBeVisible();
+  expect(
+    screen.getByRole('heading', { name: 'Films to discover — 1 film' }),
+  ).toBeVisible();
   expect(screen.getByText('Page 1 of 2')).toBeVisible();
 });
 

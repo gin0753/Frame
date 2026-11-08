@@ -72,7 +72,12 @@ export async function DiscoverResults({
           : null;
   return (
     <section aria-labelledby="discover-results-heading">
-      <h2 id="discover-results-heading">Films to discover</h2>
+      <h2 id="discover-results-heading" className={styles.resultsHeading}>
+        Films to discover{' '}
+        <span className={styles.count}>
+          — {page.items.length} {page.items.length === 1 ? 'film' : 'films'}
+        </span>
+      </h2>
       <p className={styles.summary}>
         {[genre, years, discoverSortLabels[query.sort]]
           .filter(Boolean)
@@ -80,11 +85,6 @@ export async function DiscoverResults({
       </p>
       {page.items.length ? (
         <>
-          <p className={styles.summary}>
-            Showing {page.items.length}{' '}
-            {page.items.length === 1 ? 'film' : 'films'}.
-          </p>
-
           <MovieResultsGrid
             movies={page.items.map(
               (movie) =>
