@@ -287,4 +287,12 @@ it('preserves metadata/destination and pagination when the dictionary fails', as
   ).toHaveAttribute('href', 'https://www.themoviedb.org/movie/42');
   expect(screen.getByText('Showing 1 film.')).toBeVisible();
   expect(screen.getByText('Page 1 of 2')).toBeVisible();
+  const jump = screen.getByRole('form', {
+    name: 'Jump to page',
+  }) as HTMLFormElement;
+  expect(Object.fromEntries(new FormData(jump))).toEqual({
+    q: 'Long',
+    page: '1',
+  });
+  expect(jump).toHaveAttribute('action', '/search');
 });

@@ -268,6 +268,14 @@ it('successful movies render immediately without an optional dictionary, omit mi
     screen.getByRole('heading', { name: 'Films to discover — 1 film' }),
   ).toBeVisible();
   expect(screen.getByText('Page 1 of 2')).toBeVisible();
+  const jump = screen.getByRole('form', {
+    name: 'Jump to page',
+  }) as HTMLFormElement;
+  expect(Object.fromEntries(new FormData(jump))).toEqual({
+    sort: 'newest',
+    page: '1',
+  });
+  expect(jump).toHaveAttribute('action', '/discover');
 });
 
 it('observes a late optional dictionary rejection after the page shell and empty results resolve', async () => {

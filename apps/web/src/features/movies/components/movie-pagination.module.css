@@ -1,30 +1,139 @@
 .pagination {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  align-items: center;
-  gap: 0.5rem;
   margin-top: 2rem;
   font-size: 0.875rem;
 }
-.pagination a,
-.pagination > span {
+.links {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 0.5rem;
+  width: fit-content;
+  max-width: 100%;
+  margin-inline: auto;
+}
+.links a,
+.current {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   min-height: 48px;
-  padding: 0.75rem;
+  min-width: 48px;
+  padding: 0.5rem;
   border-radius: 6px;
 }
-.pagination a {
-  border: 1px solid var(--stroke);
+.links a {
+  color: var(--text-secondary);
+  text-decoration: none;
+}
+.links a:hover {
   background: var(--surface);
-  text-decoration: underline;
-  text-underline-offset: 4px;
+  color: var(--text-primary);
 }
-.pagination > span {
+.previous {
+  grid-column: 1;
+  grid-row: 1;
+  justify-self: end;
+}
+.next {
+  grid-column: 3;
+  grid-row: 1;
+  justify-self: start;
+}
+.indicator {
+  grid-column: 2;
+  grid-row: 1;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+.tablet,
+.desktop {
+  display: none;
+  grid-column: 2;
+  grid-row: 1;
+  align-items: center;
+  gap: 0.5rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.tablet li > span:not(.current),
+.desktop li > span:not(.current) {
   color: var(--text-secondary);
 }
-.pagination p {
+.current {
+  background: var(--accent);
+  color: var(--canvas);
+  font-weight: 600;
+}
+.jump {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: fit-content;
+  max-width: 100%;
+  margin: 1rem auto 0;
   color: var(--text-secondary);
+  font-size: 0.8125rem;
+}
+.jump input[type='number'],
+.jump button {
+  min-height: 48px;
+  min-width: 48px;
+  padding: 0.5rem;
+  border: 1px solid var(--stroke);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-primary);
+  font: inherit;
+}
+.jump input[type='number'] {
+  width: 4.5rem;
+  font-size: 1rem;
+}
+.jump button:hover {
+  background: var(--surface);
+}
+.total {
+  white-space: nowrap;
+}
+.rangeDescription {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+@media (min-width: 768px) {
+  .indicator {
+    display: none;
+  }
+  .tablet {
+    display: flex;
+  }
+}
+@media (min-width: 1024px) {
+  .tablet {
+    display: none;
+  }
+  .desktop {
+    display: flex;
+  }
+}
+@media (min-width: 1280px) {
+  .pagination {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 2rem;
+  }
+  .links,
+  .jump {
+    margin: 0;
+  }
 }

@@ -116,14 +116,7 @@ export async function DiscoverResults({
         <MoviePagination
           currentPage={page.page}
           totalPages={page.totalPages}
-          previousUrl={
-            page.page > 1 ? discoverPageUrl(query, page.page - 1) : undefined
-          }
-          nextUrl={
-            page.page < page.totalPages
-              ? discoverPageUrl(query, page.page + 1)
-              : undefined
-          }
+          pageUrl={(target) => discoverPageUrl(query, target)}
         />
       )}
     </section>

@@ -93,14 +93,7 @@ export async function SearchResults({
         <MoviePagination
           currentPage={page.page}
           totalPages={page.totalPages}
-          previousUrl={
-            page.page > 1 ? searchPageUrl(q, page.page - 1) : undefined
-          }
-          nextUrl={
-            page.page < page.totalPages
-              ? searchPageUrl(q, page.page + 1)
-              : undefined
-          }
+          pageUrl={(target) => searchPageUrl(q, target)}
         />
       )}
     </section>
