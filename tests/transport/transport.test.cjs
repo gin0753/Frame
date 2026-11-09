@@ -588,6 +588,8 @@ test(
     for (const method of [
       'trending',
       'popular',
+      'search',
+      'discover',
       'genres',
       'details',
       'imageConfiguration',

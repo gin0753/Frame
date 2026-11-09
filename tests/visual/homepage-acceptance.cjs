@@ -118,11 +118,17 @@ module.exports = async function homepageAcceptance({
   artwork,
   setScenario,
 }) {
-  const evidence = path.join(
-    root,
-    'tmp/stage34b',
-    new Date().toISOString().replace(/[:.]/g, '-'),
-  );
+  if (process.env.FRAME_FOOTER_ACCEPTANCE_ONLY === 'true') {
+    setScenario({ count: 5 });
+    return footerAcceptance({ browser, origin, artwork });
+  }
+  const evidence =
+    process.env.FRAME_HOMEPAGE_EVIDENCE_DIRECTORY ||
+    path.join(
+      root,
+      'tmp/stage34b',
+      new Date().toISOString().replace(/[:.]/g, '-'),
+    );
   await fs.mkdir(evidence, { recursive: true });
   const report = {
     ...(process.env.FRAME_STAGE44 === 'true'
@@ -732,3 +738,331 @@ module.exports = async function homepageAcceptance({
 };
 // Expose the pure calculation for focused verification without a browser run.
 module.exports.cls = cls;
+
+// Focused Footer mode reuses the production Next/Nest lifecycle and artwork
+// transport supplied by the existing Homepage acceptance harness.
+async function footerAcceptance({ browser, origin, artwork }) {
+  const evidence =
+    process.env.FRAME_FOOTER_EVIDENCE_DIRECTORY ||
+    path.join(os.tmpdir(), 'frame-footer-' + Date.now());
+  await fs.mkdir(evidence, { recursive: true });
+  const report = {
+    browser: browser.version(),
+    buildId: (
+      await fs.readFile(path.join(root, 'apps/web/.next/BUILD_ID'), 'utf8')
+    ).trim(),
+    cases: [],
+    axe: [],
+    forcedColors: [],
+    pageErrors: [],
+  };
+  const notice =
+    'This product uses the TMDB API but is not endorsed or certified by TMDB.';
+  const context = await browser.newContext({ reducedMotion: 'reduce' });
+  await context.route('https://image.tmdb.org/**', (route) => {
+    const id = Number(
+      route
+        .request()
+        .url()
+        .match(/synthetic(\d+)/)?.[1] ?? 42,
+    );
+    return route.fulfill({
+      contentType: 'image/webp',
+      body: artwork[(id - 42) % artwork.length],
+    });
+  });
+  const page = await context.newPage();
+  page.on('pageerror', (error) => report.pageErrors.push(error.message));
+  const captureFooter = async (footer, file) => {
+    const viewport = page.viewportSize();
+    const height = Math.max(
+      viewport.height,
+      Math.ceil((await footer.boundingBox()).height) + 64,
+    );
+    // Capture the entire natural Footer with its gutters. Element screenshots
+    // taller than the viewport can include an offscreen fixed skip-link layer.
+    if (height !== viewport.height)
+      await page.setViewportSize({ ...viewport, height });
+    await footer.scrollIntoViewIfNeeded();
+    const logo = footer.getByRole('img', {
+      name: 'TMDB \u2014 The Movie Database',
+    });
+    await expect(logo).toBeVisible();
+    await expect
+      .poll(() => logo.evaluate((image) => image.complete))
+      .toBe(true);
+    const dimensions = await logo.evaluate((image) => ({
+      width: image.naturalWidth,
+      height: image.naturalHeight,
+    }));
+    assert.ok(dimensions.width > 0, 'TMDB logo naturalWidth must be positive');
+    assert.ok(
+      dimensions.height > 0,
+      'TMDB logo naturalHeight must be positive',
+    );
+    await logo.evaluate(async (image) => {
+      if (typeof image.decode === 'function') await image.decode();
+    });
+    await page.screenshot({ path: path.join(evidence, file) });
+    if (height !== viewport.height) await page.setViewportSize(viewport);
+    return { width: viewport.width, height };
+  };
+  const geometry = async () =>
+    page.locator('footer').evaluate((footer) => {
+      const box = (e) => {
+        const r = e.getBoundingClientRect();
+        return {
+          x: r.x,
+          y: r.y + scrollY,
+          width: r.width,
+          height: r.height,
+          right: r.right,
+          bottom: r.bottom + scrollY,
+        };
+      };
+      const targets = [...footer.querySelectorAll('a,summary')]
+        .filter((e) => e.getClientRects().length)
+        .map(box);
+      const overlaps = targets.some((a, i) =>
+        targets
+          .slice(i + 1)
+          .some(
+            (b) =>
+              Math.min(a.right, b.right) - Math.max(a.x, b.x) > 1 &&
+              Math.min(a.bottom, b.bottom) - Math.max(a.y, b.y) > 1,
+          ),
+      );
+      return {
+        footer: box(footer),
+        header: box(document.querySelector('.header-inner')),
+        branding: box(footer.querySelector('.footer-branding')),
+        nav: box(footer.querySelector('.footer-nav')),
+        attribution: box(footer.querySelector('.footer-attribution')),
+        tmdb: box(footer.querySelector('.footer-tmdb')),
+        details: box(footer.querySelector('details')),
+        closing: box(footer.querySelector('.footer-bottom')),
+        logo: box(footer.querySelector('img')),
+        targets,
+        overlaps,
+        overflow:
+          document.documentElement.scrollWidth >
+          document.documentElement.clientWidth,
+        clippedText: [...footer.querySelectorAll('p,summary,li')]
+          .filter(
+            (e) =>
+              e.getClientRects().length && e.scrollWidth > e.clientWidth + 1,
+          )
+          .map((e) => e.tagName),
+        borderedElements: [footer, ...footer.querySelectorAll('*')].filter(
+          (e) =>
+            ['Top', 'Right', 'Bottom', 'Left'].some(
+              (side) =>
+                parseFloat(getComputedStyle(e)['border' + side + 'Width']) > 0,
+            ),
+        ).length,
+        textSizes: [
+          ...footer.querySelectorAll(
+            '.footer-nav,.footer-tmdb,details,.footer-bottom',
+          ),
+        ].map((e) => parseFloat(getComputedStyle(e).fontSize)),
+      };
+    });
+  const assertGeometry = (g, width) => {
+    assert.equal(g.overflow, false);
+    assert.equal(g.overlaps, false);
+    assert.deepEqual(g.clippedText, []);
+    assert.equal(g.borderedElements, 1);
+    assert.ok(
+      Math.abs(g.footer.x - g.header.x) < 2 &&
+        Math.abs(g.footer.width - g.header.width) < 2,
+    );
+    assert.ok(Math.abs(g.logo.width - 120) < 1);
+    assert.ok(Math.abs(g.logo.width / g.logo.height - 423.04 / 35.4) < 0.02);
+    assert.ok(g.targets.every((t) => t.height >= 44));
+    assert.deepEqual(g.textSizes, [14, 14, 14, 12]);
+    if (width >= 768) assert.ok(Math.abs(g.nav.y - g.branding.y) < 2);
+    else assert.ok(g.nav.y >= g.branding.bottom + 8);
+    if (width >= 1024) {
+      assert.ok(Math.abs(g.tmdb.y - g.details.y) < 2);
+      assert.ok(g.details.x >= g.tmdb.right + 24);
+    } else assert.ok(g.details.y >= g.tmdb.bottom + 8);
+  };
+  try {
+    for (const width of widths) {
+      await page.setViewportSize({ width, height: 900 });
+      for (const [name, route] of [
+        ['home', '/'],
+        ['search', '/search?q=footer'],
+        ['discover', '/discover'],
+      ]) {
+        await page.goto(origin + route);
+        await expect(page.locator('main [aria-busy="true"]')).toHaveCount(0);
+        if (name !== 'home')
+          await expect(page.locator('.movie-card')).toHaveCount(5);
+        await page.evaluate(() => document.fonts.ready);
+        const footer = page.getByRole('contentinfo');
+        await expect(footer).toHaveCount(1);
+        const logo = footer.getByRole('img', {
+          name: 'TMDB \u2014 The Movie Database',
+        });
+        await expect(logo).toBeVisible();
+        await expect(logo).toHaveAttribute('src', '/images/brands/tmdb.svg');
+        await expect(footer.getByText(notice, { exact: true })).toBeVisible();
+        await expect(
+          footer.getByRole('link', { name: 'FRAME home' }),
+        ).toHaveAttribute('href', name === 'home' ? '#discover' : '/#discover');
+        const nav = footer.getByRole('navigation', {
+          name: 'Footer navigation',
+        });
+        assert.deepEqual(
+          await nav
+            .getByRole('link')
+            .evaluateAll((links) => links.map((e) => e.getAttribute('href'))),
+          ['/discover', '/search'],
+        );
+        const details = footer.locator('details');
+        const summary = details.locator('summary');
+        assert.equal(await details.evaluate((e) => e.open), false);
+        const closed = await geometry();
+        assertGeometry(closed, width);
+        const closedCapture = await captureFooter(
+          footer,
+          `${name}-${width}-closed.png`,
+        );
+        await page.addScriptTag({ path: axePath });
+        const axe = await page.evaluate(async () =>
+          (
+            await window.axe.run(document.querySelector('footer'))
+          ).violations.map((v) => ({ id: v.id, impact: v.impact })),
+        );
+        assert.deepEqual(axe, []);
+        report.axe.push({ name, width, state: 'closed', violations: axe });
+        await footer.getByRole('link', { name: 'FRAME home' }).focus();
+        const order = [
+          nav.getByRole('link', { name: 'Discover', exact: true }),
+          nav.getByRole('link', { name: 'Search', exact: true }),
+          footer.getByRole('link', { name: 'TMDB \u2014 The Movie Database' }),
+          summary,
+        ];
+        for (const target of order) {
+          await page.keyboard.press('Tab');
+          await expect(target).toBeFocused();
+          assert.equal(
+            await target.evaluate(
+              (e) =>
+                e.matches(':focus-visible') &&
+                getComputedStyle(e).outlineStyle !== 'none' &&
+                parseFloat(getComputedStyle(e).outlineWidth) >= 2,
+            ),
+            true,
+          );
+        }
+        await page.keyboard.press('Enter');
+        assert.equal(await details.evaluate((e) => e.open), true);
+        await expect(details.getByRole('listitem')).toHaveCount(6);
+        await expect(details.getByRole('link')).toHaveCount(12);
+        assert.ok(
+          (
+            await details
+              .getByRole('link')
+              .evaluateAll((links) => links.map((e) => e.href))
+          ).every((href) => href.startsWith('https://')),
+        );
+        await expect(
+          details.getByText(/Stills resized, compressed and cropped/),
+        ).toBeVisible();
+        await expect(footer.getByText(notice, { exact: true })).toBeVisible();
+        await page.keyboard.press('Tab');
+        await expect(details.getByRole('link').first()).toBeFocused();
+        const opened = await geometry();
+        assertGeometry(opened, width);
+        for (const key of ['footer', 'branding', 'nav', 'tmdb'])
+          assert.ok(
+            Math.abs(closed[key].y - opened[key].y) < 2,
+            'Opening disclosure moved ' + key,
+          );
+        assert.ok(
+          Math.abs(
+            opened.closing.y -
+              closed.closing.y -
+              (opened.attribution.height - closed.attribution.height),
+          ) < 2,
+          'Closing line must follow natural attribution growth',
+        );
+        const openCapture = await captureFooter(
+          footer,
+          `${name}-${width}-open.png`,
+        );
+        const openAxe = await page.evaluate(async () =>
+          (
+            await window.axe.run(document.querySelector('footer'))
+          ).violations.map((v) => ({ id: v.id, impact: v.impact })),
+        );
+        assert.deepEqual(openAxe, []);
+        report.axe.push({ name, width, state: 'open', violations: openAxe });
+        await summary.focus();
+        await page.keyboard.press('Space');
+        assert.equal(await details.evaluate((e) => e.open), false);
+        const reclosed = await geometry();
+        assert.ok(Math.abs(reclosed.footer.height - closed.footer.height) < 2);
+        report.cases.push({
+          name,
+          route,
+          width,
+          closed,
+          opened,
+          closedCapture,
+          openCapture,
+          keyboardOrder:
+            'brand, Discover, Search, TMDB, disclosure, credit links',
+          disclosureRestored: true,
+        });
+        await fs.writeFile(
+          path.join(evidence, 'footer.json'),
+          JSON.stringify(report, null, 2),
+        );
+      }
+    }
+    for (const width of [320, 1440]) {
+      await page.setViewportSize({ width, height: 900 });
+      await page.emulateMedia({ forcedColors: 'active' });
+      await page.goto(origin + '/search');
+      const footer = page.getByRole('contentinfo');
+      await expect(footer.getByText(notice, { exact: true })).toBeVisible();
+      const link = footer.getByRole('link', { name: 'Discover', exact: true });
+      await link.focus();
+      await page.keyboard.press('Tab');
+      await expect(
+        footer.getByRole('link', { name: 'Search', exact: true }),
+      ).toBeFocused();
+      assert.equal(
+        await footer
+          .getByRole('link', { name: 'Search', exact: true })
+          .evaluate((e) => getComputedStyle(e).outlineStyle !== 'none'),
+        true,
+      );
+      await captureFooter(footer, `forced-colors-${width}.png`);
+      report.forcedColors.push({
+        width,
+        mode: 'Chromium emulation',
+        focusVisible: true,
+      });
+    }
+    assert.deepEqual(report.pageErrors, []);
+  } finally {
+    await fs.writeFile(
+      path.join(evidence, 'footer.json'),
+      JSON.stringify(report, null, 2),
+    );
+    console.log(
+      JSON.stringify({
+        footerEvidence: evidence,
+        cases: report.cases.length,
+        axe: report.axe.length,
+        forcedColors: report.forcedColors.length,
+        pageErrors: report.pageErrors,
+      }),
+    );
+    await context.close();
+  }
+}

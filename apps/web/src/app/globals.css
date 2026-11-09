@@ -556,65 +556,94 @@
     border-top: 1px solid var(--stroke);
     padding-block: 2.5rem 1.5rem;
   }
-  .footer-top {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 2rem;
+  .site-footer .footer-top {
+    display: grid;
+    gap: 0.75rem;
+    align-items: start;
   }
-  .footer-top > p {
-    font-size: 0.85rem;
+  .site-footer .footer-branding p {
     color: var(--text-secondary);
+    font-size: 0.9375rem;
+    line-height: 1.7;
   }
-  .footer-top em {
+  .site-footer .footer-branding em {
     font-family: var(--font-display);
     color: var(--text-primary);
     font-size: 1.2rem;
   }
-  .footer-credit-link {
-    display: flex;
+  .site-footer .brand,
+  .site-footer .footer-nav a {
+    display: inline-flex;
     align-items: center;
-    gap: 0.5rem;
-    font-size: 0.65rem;
-    min-height: 44px;
-    color: var(--text-secondary);
+    min-height: 48px;
   }
-  .asset-credits {
-    margin-top: 2rem;
-    padding-block: 1rem;
-    border-block: 1px solid var(--stroke);
-    color: var(--text-secondary);
-    font-size: 0.65rem;
-    line-height: 1.9;
-  }
-  .asset-credits summary {
-    padding-block: 0.5rem;
-    color: #c6c7c9;
-    min-height: 44px;
-  }
-  .asset-credits p {
-    max-width: 55rem;
-    margin-block: 0.75rem;
-  }
-  .asset-credits ul {
+  .site-footer .footer-nav {
     display: flex;
     flex-wrap: wrap;
     gap: 0.5rem 1.5rem;
+    font-size: 0.875rem;
+  }
+  .site-footer .footer-nav a {
+    color: var(--text-secondary);
+  }
+  .site-footer .footer-nav a:hover {
+    color: var(--text-primary);
+  }
+  .site-footer .footer-attribution {
+    display: grid;
+    gap: 1rem 2rem;
+    margin-top: 1.5rem;
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+    line-height: 1.7;
+  }
+  .site-footer .footer-attribution > *,
+  .site-footer .asset-credits li {
+    min-width: 0;
+  }
+  .site-footer .footer-tmdb p {
+    margin-top: 0.5rem;
+    max-width: 40rem;
+  }
+  .site-footer .asset-credits summary {
+    min-height: 48px;
+    padding-block: 0.5rem;
+    color: var(--text-primary);
+  }
+  .site-footer .asset-credits p {
+    margin-block: 0.75rem;
+  }
+  .site-footer .asset-credits ul {
+    display: grid;
+    gap: 0.25rem;
     list-style: none;
     padding: 0;
   }
-  .asset-credits a {
+  .site-footer .asset-credits a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    max-width: 100%;
+    overflow-wrap: anywhere;
     text-decoration: underline;
     text-underline-offset: 3px;
   }
-  .footer-bottom {
-    display: flex;
-    justify-content: space-between;
-    gap: 1.5rem;
-    color: var(--text-secondary);
-    font-size: 0.5rem;
-    letter-spacing: 0.08em;
+  .site-footer .footer-bottom {
     margin-top: 1.5rem;
+    color: var(--text-secondary);
+    font-size: 0.75rem;
+    line-height: 1.7;
+  }
+  @media (min-width: 768px) {
+    .site-footer .footer-top {
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 2rem;
+    }
+  }
+  @media (min-width: 1024px) {
+    .site-footer .footer-attribution {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
   }
   .skip-link {
     position: fixed;
@@ -890,50 +919,6 @@
   }
   .reset-filter {
     flex-shrink: 0;
-  }
-  .footer-top {
-    flex-wrap: wrap;
-    gap: 1.25rem;
-  }
-  .footer-top > p {
-    order: 3;
-    width: 100%;
-    font-size: 0.9375rem;
-  }
-  .site-footer .brand {
-    display: inline-flex;
-    align-items: center;
-    min-height: 44px;
-  }
-  .footer-credit-link,
-  .asset-credits {
-    font-size: 0.875rem;
-    line-height: 1.7;
-  }
-  .asset-credits ul {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr);
-    gap: 0.5rem;
-  }
-  .asset-credits li {
-    min-width: 0;
-  }
-  .asset-credits a {
-    display: inline-flex;
-    align-items: center;
-    min-height: 44px;
-    max-width: 100%;
-    overflow-wrap: anywhere;
-  }
-  .footer-bottom {
-    flex-direction: column;
-    gap: 0.5rem;
-    font-size: 0.75rem;
-    letter-spacing: 0;
-    line-height: 1.8;
-  }
-  .footer-bottom > span:last-child {
-    display: none;
   }
   .loading-cards {
     grid-template-columns: 1fr;

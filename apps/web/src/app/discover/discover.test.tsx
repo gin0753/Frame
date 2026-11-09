@@ -147,10 +147,11 @@ it('default discovery fetches results, renders native GET controls and route-awa
     'href',
     '/discover',
   );
-  expect(screen.getByRole('link', { name: 'Discover' })).toHaveAttribute(
-    'aria-current',
-    'page',
-  );
+  expect(
+    within(
+      screen.getByRole('navigation', { name: 'Main navigation' }),
+    ).getByRole('link', { name: 'Discover' }),
+  ).toHaveAttribute('aria-current', 'page');
 });
 it('preserves applied values and edits do not change results or fetch until submission', async () => {
   await page({
