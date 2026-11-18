@@ -1,0 +1,11 @@
+{
+  "DarkVeil": {
+    "QUAD_VERTEX": "254cf753223046ecd2701ab8d840273bb06e104774ef4940f99dbbfa852945f4",
+    "FIELD": "c4f94ae734d62a0321f5782526ac9e81a7f9cbe53974a9f1ac976f9ceb473cd3",
+    "COMPOSITE": "2ac8337a7eebe5e3ac7cf0899e4efe48f041daf37acb5ed91ba5dd77589e7fae"
+  },
+  "Aurora": {
+    "VERTEX": "254cf753223046ecd2701ab8d840273bb06e104774ef4940f99dbbfa852945f4",
+    "FRAGMENT": "bec3c9b7425e5b883eb8c44bc63e2834b9b4c6ea321ce9c8d47fec396a1680a5"
+  }
+}

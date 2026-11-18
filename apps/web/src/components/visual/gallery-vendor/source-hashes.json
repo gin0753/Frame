@@ -1,0 +1,176 @@
+{
+  "revision": "9d9c687dc4f55b23539aa5417b703078047efa74",
+  "files": {
+    "Galaxy.css": {
+      "upstreamSha256": "cf044acbe4e8ab9a315b972ef4d52dc4b7f2817970d2d90aef709267e3176d69",
+      "vendoredSha256": "cf044acbe4e8ab9a315b972ef4d52dc4b7f2817970d2d90aef709267e3176d69",
+      "shaderHashes": []
+    },
+    "Galaxy.tsx": {
+      "upstreamSha256": "63b71e70b22a43571c1d05cbef9feed4cc553bfccc89cec97cced1b79199249b",
+      "vendoredSha256": "5ba623d362e059793771bc2c0f2e2d6fbe4a6b00605eca35503647109ac61d3a",
+      "shaderHashes": [
+        "ea3609a4d6af4abcf353126df5bc37b0ca49474d506a3014286833f80166413d",
+        "04647a16d7b7f023ad00c542d365606ab10a864c7eae3fca8e85a9cc77ac344a"
+      ]
+    },
+    "GhostFibers.css": {
+      "upstreamSha256": "7df10fe8eeaa2554b8b4f99ab776ff0ba2e6825fe048631939d0cff52015931d",
+      "vendoredSha256": "7df10fe8eeaa2554b8b4f99ab776ff0ba2e6825fe048631939d0cff52015931d",
+      "shaderHashes": []
+    },
+    "GhostFibers.tsx": {
+      "upstreamSha256": "d509609554a756ff7f9ecf18a9188e065d024b15385c48b00bbc5505d0a4c77d",
+      "vendoredSha256": "16a3766b6439a84424c1531a03565d911d8e272f8ac07135cf63762b63946887",
+      "shaderHashes": [
+        "23f645e346597957266f808f812dcbceeaaf5bd921d620ad55af33b67ae25354",
+        "6214af6087802331670611173a135adbb7a2dbaf51ba90c0a9637b4dbfd994b9",
+        "1751067ede6895677f4198e7d06c56b754095e63608e24b7b37c1538c333be05",
+        "1fa5501c545eb3b4af3fca10baf4e9ef9c1c71245b32625b4555d26600a9c0dc",
+        "a8c3607a87ffc4a58698ad3c96decd0dd456fc943c17c02aee2d4889b5ef918f",
+        "a87b88937f862f2e9a7ff31a391e125bb33034d7cf8b5d0854b6fdcb2ee6e7ef",
+        "9e87a852484878aebbe77664c7d22cd6ec8d5ccf1a41ccc80e6606829d19f534",
+        "f64211880b12d6079aad2b8a2e00989bf8ae72ab8caa7a19060cb06cea113af6",
+        "f2b831d96c08e4a9717ddbd53b11fab53533b1e15ccc59f0e25012d642a8e1ec"
+      ]
+    },
+    "GridDistortion.css": {
+      "upstreamSha256": "85c5caa7ea96ffb23f2ae35053accbe8c44e348b0bb5110b736814ce72a3f982",
+      "vendoredSha256": "85c5caa7ea96ffb23f2ae35053accbe8c44e348b0bb5110b736814ce72a3f982",
+      "shaderHashes": []
+    },
+    "GridDistortion.tsx": {
+      "upstreamSha256": "b78672954882d93bd965cb0ed1240f7f182f177da08438391353b7b98bf75b77",
+      "vendoredSha256": "4b62bd591e821dd9da1f9a7d3a1b6917b50dc3f1355f832fef02a7ffe472198b",
+      "shaderHashes": [
+        "e3ca9fda34a8166e2c40d345815f5354f452f30012c47fbcb3eca9d4e3f0d2d0",
+        "a9b1cef31b1f0a1124b252ee2c209e3ae55a6c3717f89a3f14baf89d0665ed24"
+      ]
+    },
+    "GridMotion.css": {
+      "upstreamSha256": "afd25e368ac6fd0962be193928275cef9016c4cd24a083bf37b025d9514a1b3b",
+      "vendoredSha256": "afd25e368ac6fd0962be193928275cef9016c4cd24a083bf37b025d9514a1b3b",
+      "shaderHashes": []
+    },
+    "GridMotion.tsx": {
+      "upstreamSha256": "58549965c2444263155ec097c444f93dd8c0758849026b6be6975f6df9e3b541",
+      "vendoredSha256": "1028f0c5ceced0550c206820a3504c1e5bea576435d844bd9c590747b681a90b",
+      "shaderHashes": []
+    },
+    "Lightning.css": {
+      "upstreamSha256": "f2cd99f5a8ce288a1178b7fdf9cd0811e3095c5bcc792ff27b72bb56c54cedab",
+      "vendoredSha256": "f2cd99f5a8ce288a1178b7fdf9cd0811e3095c5bcc792ff27b72bb56c54cedab",
+      "shaderHashes": []
+    },
+    "Lightning.tsx": {
+      "upstreamSha256": "6099c41c93f97df6ef90b63706ecf95017444b09ed81834581a7941fa6085994",
+      "vendoredSha256": "37bfc54d45692448b71ea0c2a39be122a469056e5ac34ebb0402e0fc7b80b4d8",
+      "shaderHashes": [
+        "08c3a101820c8bdeed39d0fe7e3569039d962b9e5acd1d547a131bc39389e98f",
+        "d910a17f3a29f7a28fca3775358231cc0fd5db4fd4e7629733c73bc7d118d1b2"
+      ]
+    },
+    "LightPillar.css": {
+      "upstreamSha256": "c6f435bd2b9fa553a879310fe27f2dc31dd21ea16f68ea0250ba4db78b7847de",
+      "vendoredSha256": "c6f435bd2b9fa553a879310fe27f2dc31dd21ea16f68ea0250ba4db78b7847de",
+      "shaderHashes": []
+    },
+    "LightPillar.tsx": {
+      "upstreamSha256": "45fd5c6205d49b980d07e7ac8b823d00203615e762feac59d4cdb9018ad92143",
+      "vendoredSha256": "8f2fe984a3a90282d9b6511e360ecf43e9fe22a897dc33c1612c959de1bab291",
+      "shaderHashes": [
+        "ea3609a4d6af4abcf353126df5bc37b0ca49474d506a3014286833f80166413d",
+        "cfaa8090e160efec389276ca7fe0c723b2dcd7dacff50f31ce592ec942338f92",
+        "9955042b0248accd6e1ed3505bd30d4ea7d425130305e7ca4b7fef0c7fed31d6"
+      ]
+    },
+    "MagicRings.css": {
+      "upstreamSha256": "15d697f2684c9546671649fae007cc9338e76cca1b37a6ed6222b8a90643e399",
+      "vendoredSha256": "15d697f2684c9546671649fae007cc9338e76cca1b37a6ed6222b8a90643e399",
+      "shaderHashes": []
+    },
+    "MagicRings.tsx": {
+      "upstreamSha256": "acc3af3e120b10c1b3e6156cca547eeaf142f310e8fdd2a09a308088a33dc513",
+      "vendoredSha256": "67a73de79f49ef1c4b9d4f7599adb7844d23ca021982a1648e2ac242774049fa",
+      "shaderHashes": [
+        "a9c6f85c94e8a0b5e17b4f51997accc8bd26d35901d57d3f88d5b3bef01030a8",
+        "5dfc40fbda22e3df114d6067d66fa7827bbac45af9dca9541aa6a46e7394c72e",
+        "b779354bac8b96c0ed31d4fe6a2e0f8654dd4e08ab0ea7407a3897223b0ad55b",
+        "4bf245aeb7ef3da97f1c17b0a7d8aa94b001f2eef51da3a856c6e31d791baac2",
+        "c969a0183046e431fa02400b50feaaf8006166c5b1db37b6c27929fa5527adc1"
+      ]
+    },
+    "Orb.css": {
+      "upstreamSha256": "7f1dd853ee98801256aaba5db5bb08bd738593ea76dd42e993d1403f6887816a",
+      "vendoredSha256": "7f1dd853ee98801256aaba5db5bb08bd738593ea76dd42e993d1403f6887816a",
+      "shaderHashes": []
+    },
+    "Orb.tsx": {
+      "upstreamSha256": "614e37a1f7ef06891f6cc19454c5c4872c6e42a3f3292cdf4a66c3191d99db68",
+      "vendoredSha256": "eb0c13041c447b732bd54bb0379899365f414fcc65004934735f189c7a7dfa4b",
+      "shaderHashes": [
+        "ea3609a4d6af4abcf353126df5bc37b0ca49474d506a3014286833f80166413d",
+        "079f2c6aed5c9a29df7b1312569c93d671ecee05ade427089661659603d59a6d"
+      ]
+    },
+    "Radar.css": {
+      "upstreamSha256": "21808b904f948e0bd26c33c4ce39e4d6bdc80b56fe053feefbb839ea8cfc93a4",
+      "vendoredSha256": "21808b904f948e0bd26c33c4ce39e4d6bdc80b56fe053feefbb839ea8cfc93a4",
+      "shaderHashes": []
+    },
+    "Radar.tsx": {
+      "upstreamSha256": "cd8128138956963cf5c3388610a1dc7a0b76fc128c2c0e550cff7f29a93cf6e7",
+      "vendoredSha256": "aef9c886887f9adff18bf64ab70655015eb86f7e6cac5398e05f10b3149eeff0",
+      "shaderHashes": [
+        "ea3609a4d6af4abcf353126df5bc37b0ca49474d506a3014286833f80166413d",
+        "655e935c3e16f01626e61728065015bf26cd758924ab0303855100f32443eb7e",
+        "da48f28a9031b5291a2aa51158c6f01a798686abcdaaad75b62d54986aca4c63",
+        "eb192788b8ddd3df0c78bff70fc996084d4bd86bb4c90d30d139db0e9d24b8ee",
+        "4257d4b917b9e903e6698fbdeac716ec6a943c1a7893ff2714bc8f80612f1f27",
+        "472988ab9f754fc3b5f888f375bdfd6b8f06532aefb277b6b509ffa3f06572bd",
+        "c7dc4a6f177080fca44aa34fc892ce2e43243abd17325d5ea189e259f582c16a"
+      ]
+    },
+    "SideRays.css": {
+      "upstreamSha256": "a5db4e2cb32d4b27841b1fb585e8d546767d2632ca97864f077d960c3982c3eb",
+      "vendoredSha256": "a5db4e2cb32d4b27841b1fb585e8d546767d2632ca97864f077d960c3982c3eb",
+      "shaderHashes": []
+    },
+    "SideRays.tsx": {
+      "upstreamSha256": "66bda4186bdbcc31b96b7383fe832e3f2cca79ef5800dbd40dbd305522189b76",
+      "vendoredSha256": "e6edcd27e6a6c123276215612e8df88e6a5f44a0494816b93c1e55b0ceb44093",
+      "shaderHashes": [
+        "a491beff69f9d58cef55fa6152a9ce7c53d706cb66b705a9839cb17dae76a400",
+        "20a94d958d5b3fdecda99e5c9cfe41c033984d09b7ae20b36b82ff8312444d75"
+      ]
+    },
+    "Silk.css": {
+      "upstreamSha256": "7dcec7af659220ed8a3f631f300ea636e0d9007dd9ed014b8968be6015462791",
+      "vendoredSha256": "7dcec7af659220ed8a3f631f300ea636e0d9007dd9ed014b8968be6015462791",
+      "shaderHashes": []
+    },
+    "Silk.tsx": {
+      "upstreamSha256": "2bad495ec9235fa48a02f44903b46bb1596b8f844375fd196a734d461720a39f",
+      "vendoredSha256": "ad47f28c7666cc85399aa1cd8e7c7ece0bbadcb1f03ada0092d70a906c083a48",
+      "shaderHashes": [
+        "ea3609a4d6af4abcf353126df5bc37b0ca49474d506a3014286833f80166413d",
+        "3bfcdd11cefbcd48cda8295582ff1b9a21261ba7d2faf8fb64ce412ebdd04aca",
+        "bbf4699df233bad66f13f30684ea454e2012501cf7750a99e3ab49a242e9067e"
+      ]
+    },
+    "SoftAurora.css": {
+      "upstreamSha256": "aa0f347a864a2f6fabb75d84f3b6cdd9ed3fe94015069a31b76ad3da4cbc709f",
+      "vendoredSha256": "aa0f347a864a2f6fabb75d84f3b6cdd9ed3fe94015069a31b76ad3da4cbc709f",
+      "shaderHashes": []
+    },
+    "SoftAurora.tsx": {
+      "upstreamSha256": "eba142da7c0d7ac70cada22a59dd36ad5bfe45e8c04764965898ebb26bc9b87e",
+      "vendoredSha256": "57101cae2947b8056255b59ef1036743d8f45156c076b311da4dddf9c271d1ec",
+      "shaderHashes": [
+        "a491beff69f9d58cef55fa6152a9ce7c53d706cb66b705a9839cb17dae76a400",
+        "d9cb816524250ac3b61ba091f57d9d5d7108281dc89fb451a51e8cfd1cccdd29"
+      ]
+    }
+  },
+  "licenseSha256": "4bdd1fa59a6b7d5954bc3b213dbc34e455c635a94bbcecf9293553797d0fad02"
+}
