@@ -105,7 +105,7 @@ function generateOpenApi() {
         },
         400: errorResponse('Invalid or unsupported input: VALIDATION_ERROR.'),
         ...('params' in contract
-          ? { 404: errorResponse('Movie absent: NOT_FOUND.') }
+          ? { 404: errorResponse('Movie absent: MOVIE_NOT_FOUND.') }
           : {}),
         429: errorResponse('Provider rate limit: RATE_LIMITED.'),
         502: errorResponse(

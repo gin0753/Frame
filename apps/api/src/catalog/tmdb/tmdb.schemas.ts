@@ -66,7 +66,8 @@ export const tmdbDiscoveryMoviesSchema = z
 export const tmdbGenresSchema = z.object({ genres: z.array(tmdbGenreSchema) });
 const person = z.object({ id, name: text });
 export const tmdbDetailSchema = movie.extend({
-  genres: z.array(tmdbGenreSchema),
+  genres: z.array(tmdbGenreSchema).nullable().optional(),
+  original_title: optionalText,
   runtime: z.number().int().nonnegative().nullable().optional(),
   budget: z.number().int().nonnegative().nullable().optional(),
   revenue: z.number().int().nonnegative().nullable().optional(),

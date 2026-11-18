@@ -36,6 +36,8 @@ test('strict summary and detail contracts require complete nullable fields and p
     );
   const detail = {
     ...summary,
+    genres: [{ id: 18, name: 'Drama' }],
+    originalTitle: null,
     runtimeMinutes: null,
     directors: [],
     cast: [],
@@ -47,6 +49,17 @@ test('strict summary and detail contracts require complete nullable fields and p
     externalLinks: [],
   };
   assert.deepEqual(c.movieDetailSchema.parse(detail), detail);
+  for (const patch of [
+    { genres: [{ id: 0, name: 'Drama' }] },
+    { genres: [{ id: 18, name: ' ' }] },
+    { originalTitle: '' },
+    { originalTitle: 42 },
+    { originalTitle: undefined },
+  ])
+    assert.equal(
+      c.movieDetailSchema.safeParse({ ...detail, ...patch }).success,
+      false,
+    );
   assert.equal(
     c.movieDetailSchema.safeParse({ ...detail, runtimeMinutes: 0 }).success,
     false,
@@ -100,6 +113,18 @@ test('catalog OpenAPI is generated from route contracts and states provisional p
     assert.ok(operation.responses['400']);
     assert.ok(operation.responses['503']);
   }
+  const detailSchema =
+    doc.paths[c.catalogContracts.detail.path].get.responses['200'].content[
+      'application/json'
+    ].schema;
+  assert.ok(detailSchema.properties.genres);
+  assert.ok(detailSchema.properties.originalTitle);
+  assert.ok(detailSchema.required.includes('genres'));
+  assert.ok(detailSchema.required.includes('originalTitle'));
+  assert.match(
+    doc.paths[c.catalogContracts.detail.path].get.responses['404'].description,
+    /MOVIE_NOT_FOUND/,
+  );
   const operation = doc.paths[c.catalogContracts.trending.path].get;
   const page = operation.parameters.find(
     (parameter) => parameter.name === 'page',

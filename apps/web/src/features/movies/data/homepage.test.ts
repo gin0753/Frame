@@ -38,6 +38,8 @@ const page = (items: MovieSummary[]) => ({
 const detail: MovieDetail = {
   ...movie(1),
   overview: 'Detail overview',
+  genres: [{ id: 18, name: 'Drama' }],
+  originalTitle: null,
   runtimeMinutes: 90,
   directors: [],
   cast: [],

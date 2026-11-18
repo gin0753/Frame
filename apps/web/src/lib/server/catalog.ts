@@ -1,6 +1,7 @@
 ﻿import 'server-only';
 import {
   catalogContracts,
+  apiErrorSchema,
   movieParamsSchema,
   popularQuerySchema,
   trendingQuerySchema,
@@ -26,6 +27,7 @@ async function readCatalog<T>(
   path: string,
   schema: { parse(value: unknown): T },
   validationErrors = false,
+  detailNotFound = false,
 ): Promise<T> {
   const origin = apiOrigin(process.env.FRAME_API_ORIGIN);
   if (!origin)
@@ -38,14 +40,18 @@ async function readCatalog<T>(
       // 800 ms of this existing outer deadline for routing and delivery.
       signal: AbortSignal.timeout(3000),
     });
-    if (
-      !response.ok ||
+    const json =
       response.headers
         .get('content-type')
         ?.split(';')[0]
         .trim()
-        .toLowerCase() !== 'application/json'
-    )
+        .toLowerCase() === 'application/json';
+    if (detailNotFound && response.status === 404 && json) {
+      const error = apiErrorSchema.safeParse(await response.json());
+      if (error.success && error.data.error.code === 'MOVIE_NOT_FOUND')
+        throw new CatalogReadError(404);
+    }
+    if (!response.ok || !json)
       throw new CatalogReadError(
         response.status === 429
           ? 429
@@ -91,6 +97,8 @@ export function getMovieDetail(params: MovieParams) {
   return readCatalog(
     catalogContracts.detail.path.replace('{tmdbMovieId}', parsed.tmdbMovieId),
     catalogContracts.detail.response,
+    false,
+    true,
   );
 }
 

@@ -30,6 +30,7 @@ const config = {
 const detail = {
   ...movie,
   genres: [{ id: 18, name: 'Drama' }],
+  original_title: ' Original title ',
   runtime: 90,
   budget: 0,
   revenue: 123,
@@ -153,6 +154,8 @@ test('pure normalization validates output, preserves identity/votes and does not
     'https://image.tmdb.org/t/p/w1280/synthetic.jpg',
   );
   assert.deepEqual(output.genreIds, [18]);
+  assert.deepEqual(output.genres, [{ id: 18, name: 'Drama' }]);
+  assert.equal(output.originalTitle, 'Original title');
   assert.equal(output.runtimeMinutes, 90);
   assert.equal(output.cast[0].character, null);
   assert.equal(output.directors[0].name, 'Director');
@@ -171,6 +174,26 @@ test('pure normalization validates output, preserves identity/votes and does not
   assert.equal(unknown.runtimeMinutes, null);
   assert.deepEqual(unknown.cast, []);
   assert.equal(unknown.trailerUrl, null);
+  for (const genres of [undefined, null, []]) {
+    const normalized = n.normalizeMovieDetail({ ...detail, genres }, config);
+    assert.deepEqual(normalized.genres, []);
+    assert.deepEqual(normalized.genreIds, []);
+  }
+  for (const original_title of [undefined, null, '', '  '])
+    assert.equal(
+      n.normalizeMovieDetail({ ...detail, original_title }, config)
+        .originalTitle,
+      null,
+    );
+  assert.throws(() =>
+    n.normalizeMovieDetail({ ...detail, original_title: 42 }, config),
+  );
+  assert.throws(() =>
+    n.normalizeMovieDetail(
+      { ...detail, genres: [{ id: 18, name: '' }] },
+      config,
+    ),
+  );
   assert.throws(() => n.normalizeMoviePage(page, config, 2));
   const big = {
     ...page,
@@ -298,7 +321,7 @@ test('real production Nest HTTP catalog routes, schemas, errors and provider-onl
       ['NETWORK', 502, 'CATALOG_UNAVAILABLE'],
       ['UPSTREAM', 502, 'CATALOG_UNAVAILABLE'],
       ['RATE_LIMITED', 429, 'RATE_LIMITED'],
-      ['NOT_FOUND', 404, 'NOT_FOUND'],
+      ['NOT_FOUND', 404, 'MOVIE_NOT_FOUND'],
       ['malformed', 502, 'CATALOG_UNAVAILABLE'],
     ]) {
       failure = category;

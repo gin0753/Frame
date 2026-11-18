@@ -58,8 +58,9 @@ export function normalizeMovieDetail(
   config: TmdbImageConfig,
 ) {
   const movie = tmdbDetailSchema.parse(input);
+  const genres = (movie.genres ?? []).map(normalizeGenre);
   const summary = normalizeMovieSummary(
-    { ...movie, genre_ids: movie.genres.map((genre) => genre.id) },
+    { ...movie, genre_ids: genres.map((genre) => genre.id) },
     config,
   );
   const trailer = movie.videos?.results.find(
@@ -71,6 +72,8 @@ export function normalizeMovieDetail(
   );
   return movieDetailSchema.parse({
     ...summary,
+    genres,
+    originalTitle: nullableText(movie.original_title),
     runtimeMinutes: positive(movie.runtime),
     directors: (movie.credits?.crew ?? [])
       .filter((person) => person.job === 'Director')

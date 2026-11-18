@@ -20,6 +20,7 @@ export const apiErrorSchema = z.strictObject({
       'UNAUTHENTICATED',
       'FORBIDDEN',
       'NOT_FOUND',
+      'MOVIE_NOT_FOUND',
       'CONFLICT',
       'RATE_LIMITED',
       'INTERNAL_ERROR',
@@ -72,6 +73,8 @@ export const movieSummarySchema = z.strictObject({
 export type MovieSummary = z.infer<typeof movieSummarySchema>;
 const person = z.strictObject({ id: identity, name: text });
 export const movieDetailSchema = movieSummarySchema.extend({
+  genres: z.array(genreSchema),
+  originalTitle: text.nullable(),
   runtimeMinutes: z.number().int().positive().nullable(),
   directors: z.array(person),
   cast: z.array(person.extend({ character: text.nullable() })),

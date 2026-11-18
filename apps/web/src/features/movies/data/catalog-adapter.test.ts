@@ -124,6 +124,8 @@ describe('catalog presentation boundary', () => {
     };
     const detail = movieDetailSchema.parse({
       ...input,
+      genres: [],
+      originalTitle: null,
       runtimeMinutes: 90,
       directors: [],
       cast: [],
