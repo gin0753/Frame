@@ -46,6 +46,23 @@ export const tmdbMoviesSchema = z
         : Math.min(20, page.total_results - (page.page - 1) * 20);
     return page.results.length === expected;
   });
+// Application compatibility policy for Search/Discover, not a live-provider guarantee.
+export const tmdbDiscoveryMoviesSchema = z
+  .object({
+    page: z.number().int().positive().max(500),
+    results: z.array(tmdbSummarySchema).max(20),
+    total_pages: z.number().int().nonnegative(),
+    total_results: z.number().int().nonnegative(),
+  })
+  .refine((page) => {
+    if (page.total_results === 0)
+      return page.total_pages === 0 && page.results.length === 0;
+    return (
+      page.total_pages > 0 &&
+      page.results.length <= page.total_results &&
+      (page.page <= page.total_pages || page.results.length === 0)
+    );
+  });
 export const tmdbGenresSchema = z.object({ genres: z.array(tmdbGenreSchema) });
 const person = z.object({ id, name: text });
 export const tmdbDetailSchema = movie.extend({

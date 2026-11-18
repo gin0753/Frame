@@ -1,14 +1,72 @@
-import { render, screen } from '@testing-library/react';
-import { expect, it } from 'vitest';
+import { cleanup, render, screen, within } from '@testing-library/react';
+import { afterEach, expect, it } from 'vitest';
+import userEvent from '@testing-library/user-event';
 import { Footer } from './footer';
+import { assetCredits } from '@/features/movies/data/asset-credits';
 import { readFileSync } from 'node:fs';
 import { URL as NodeURL } from 'node:url';
+
+afterEach(cleanup);
+
+it('groups one wordmark and tagline, offers real destinations and keeps a quiet factual closing', () => {
+  const { rerender } = render(<Footer />);
+  expect(screen.getAllByRole('contentinfo')).toHaveLength(1);
+  const brand = screen.getByRole('link', { name: 'FRAME home' });
+  expect(brand).toHaveAttribute('href', '#discover');
+  expect(brand.parentElement).toContainElement(
+    screen.getByText(/For the love of the/),
+  );
+  const nav = screen.getByRole('navigation', { name: 'Footer navigation' });
+  expect(
+    within(nav)
+      .getAllByRole('link')
+      .map((link) => link.getAttribute('href')),
+  ).toEqual(['/discover', '/search']);
+  expect(screen.getByText('\u00a9 2026 FRAME')).toBeVisible();
+  expect(screen.queryByText('An independent eye on cinema.')).toBeNull();
+  expect(screen.queryByText('CURATED WITH INTENTION')).toBeNull();
+  rerender(<Footer homeHref="/#discover" />);
+  expect(screen.getByRole('link', { name: 'FRAME home' })).toHaveAttribute(
+    'href',
+    '/#discover',
+  );
+});
+
+it('keeps the native disclosure closed initially and preserves every source, license and adaptation notice', async () => {
+  const { container } = render(<Footer />);
+  const details = container.querySelector('details')!;
+  expect(details).toHaveAttribute('id', 'credits');
+  expect(details).not.toHaveAttribute('open');
+  const summary = details.querySelector('summary')!;
+  await userEvent.click(summary);
+  expect(details).toHaveAttribute('open');
+  expect(within(details).getAllByRole('listitem')).toHaveLength(6);
+  for (const credit of assetCredits) {
+    const row = within(details)
+      .getByRole('link', { name: credit.title })
+      .closest('li')!;
+    expect(
+      within(row).getByRole('link', { name: credit.title }),
+    ).toHaveAttribute('href', credit.source);
+    expect(
+      within(row).getByRole('link', { name: credit.license }),
+    ).toHaveAttribute('href', credit.policy);
+  }
+  expect(
+    within(details).getByText(/Stills resized, compressed and cropped/),
+  ).toHaveTextContent(
+    'poster-format artwork is a FRAME crop, not an official release poster. FRAME is an independent prototype with no Blender affiliation.',
+  );
+  expect(within(details).getByText(/See each project/)).toBeVisible();
+  await userEvent.click(summary);
+  expect(details).not.toHaveAttribute('open');
+});
 
 it('preserves Blender credits and exposes the TMDB notice outside the collapsed disclosure', () => {
   const { container } = render(<Footer />);
   expect(screen.getByText(/Imagery © Blender Foundation/)).toBeVisible();
   const notice = screen.getByText(
-    /This product uses the TMDB API but is not endorsed or certified by TMDB/,
+    'This product uses the TMDB API but is not endorsed or certified by TMDB.',
   );
   expect(notice).toBeVisible();
   expect(screen.getByRole('group', { name: 'TMDB credits' })).toContainElement(

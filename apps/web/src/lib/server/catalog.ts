@@ -4,6 +4,9 @@ import {
   movieParamsSchema,
   popularQuerySchema,
   trendingQuerySchema,
+  searchQuerySchema,
+  discoverQuerySchema,
+  type DiscoverQuery,
 } from '@frame/contracts';
 import type {
   MovieParams,
@@ -12,10 +15,17 @@ import type {
 } from '@frame/contracts';
 import { apiOrigin } from '../../../config/api-origin';
 
+export class CatalogReadError extends Error {
+  constructor(public readonly status: number) {
+    super('FRAME catalog unavailable or invalid response.');
+  }
+}
+
 // Fixed public reads only; no cookies or caller-controlled origin.
 async function readCatalog<T>(
   path: string,
   schema: { parse(value: unknown): T },
+  validationErrors = false,
 ): Promise<T> {
   const origin = apiOrigin(process.env.FRAME_API_ORIGIN);
   if (!origin)
@@ -36,11 +46,25 @@ async function readCatalog<T>(
         .trim()
         .toLowerCase() !== 'application/json'
     )
-      throw new Error();
+      throw new CatalogReadError(
+        response.status === 429
+          ? 429
+          : validationErrors && response.status === 400
+            ? 400
+            : 503,
+      );
     return schema.parse(await response.json());
-  } catch {
-    throw new Error('FRAME catalog unavailable or invalid response.');
+  } catch (error) {
+    if (error instanceof CatalogReadError) throw error;
+    throw new CatalogReadError(503);
   }
+}
+export function searchMovies(q: string, page = '1') {
+  const parsed = searchQuerySchema.parse({ q, page });
+  return readCatalog(
+    `${catalogContracts.search.path}?${new URLSearchParams(parsed)}`,
+    catalogContracts.search.response,
+  );
 }
 export function getTrendingMovies(query: Partial<TrendingQuery> = {}) {
   const parsed = trendingQuerySchema.parse(query);
@@ -67,5 +91,19 @@ export function getMovieDetail(params: MovieParams) {
   return readCatalog(
     catalogContracts.detail.path.replace('{tmdbMovieId}', parsed.tmdbMovieId),
     catalogContracts.detail.response,
+  );
+}
+
+export function discoverMovies(query: DiscoverQuery) {
+  const parsed = discoverQuerySchema.parse(query);
+  const params = new URLSearchParams(
+    Object.entries(parsed).filter(
+      ([, value]) => value !== undefined && value !== '',
+    ) as [string, string][],
+  );
+  return readCatalog(
+    catalogContracts.discover.path + '?' + params,
+    catalogContracts.discover.response,
+    true,
   );
 }

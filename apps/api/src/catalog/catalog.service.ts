@@ -1,5 +1,6 @@
 ﻿import {
   HttpException,
+  BadRequestException,
   Inject,
   Injectable,
   NotFoundException,
@@ -8,6 +9,9 @@ import {
   genresResponseSchema,
   moviePageSchema,
   movieDetailSchema,
+  searchQuerySchema,
+  discoverQuerySchema,
+  type DiscoverQuery,
 } from '@frame/contracts';
 import { ZodError } from 'zod';
 import { TmdbAdapter } from './tmdb/tmdb.adapter';
@@ -170,23 +174,85 @@ export class CatalogService {
       signal,
     );
   }
-  genres(signal?: AbortSignal) {
+  search(query: string, signal?: AbortSignal, page = 1) {
+    const { q } = searchQuerySchema.parse({ q: query, page: String(page) });
     return this.read(
       (caller) =>
         this.coordinator.get(
-          catalogKey('genres'),
-          'genres',
-          genresResponseSchema,
-          async (signal) =>
-            genresResponseSchema.parse({
-              items: (await this.tmdb.genres({ signal })).genres.map(
-                normalizeGenre,
-              ),
-            }),
+          catalogKey('search', [q, page, 'adult:false']),
+          'search',
+          moviePageSchema,
+          (shared) =>
+            this.movieRead(
+              (signal) => this.tmdb.search(q, { signal, page }),
+              // Search follows the frozen accessible-range totals policy.
+              (movie, config) =>
+                normalizeMoviePage(movie, config, page, false, true),
+              shared,
+            ),
           caller,
         ),
       signal,
     );
+  }
+  discover(input: DiscoverQuery, signal?: AbortSignal) {
+    const query = discoverQuerySchema.parse(input);
+    const { genreId, yearFrom, yearTo, sort } = query;
+    const page = Number(query.page);
+    return this.read(
+      (caller) =>
+        this.coordinator.get(
+          catalogKey('discover', [
+            genreId || '',
+            yearFrom || '',
+            yearTo || '',
+            sort,
+            page,
+            'adult:false',
+            'video:false',
+            sort === 'rated' ? 'votes:100' : 'votes:unset',
+          ]),
+          'discover',
+          moviePageSchema,
+          (shared) =>
+            this.movieRead(
+              async (signal) => {
+                if (genreId) {
+                  const dictionary = await this.readGenres(signal);
+                  if (
+                    !dictionary.items.some(
+                      (genre) => genre.id === Number(genreId),
+                    )
+                  )
+                    throw new BadRequestException('Choose an available genre.');
+                }
+                return this.tmdb.discover(query, { signal });
+              },
+              (movie, config) =>
+                normalizeMoviePage(movie, config, page, false, true),
+              shared,
+            ),
+          caller,
+        ),
+      signal,
+    );
+  }
+  private readGenres(signal: AbortSignal) {
+    return this.coordinator.get(
+      catalogKey('genres'),
+      'genres',
+      genresResponseSchema,
+      async (signal) =>
+        genresResponseSchema.parse({
+          items: (await this.tmdb.genres({ signal })).genres.map(
+            normalizeGenre,
+          ),
+        }),
+      signal,
+    );
+  }
+  genres(signal?: AbortSignal) {
+    return this.read((caller) => this.readGenres(caller), signal);
   }
   detail(id: number, signal?: AbortSignal) {
     return this.read(

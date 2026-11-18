@@ -14,11 +14,15 @@ import {
   movieParamsSchema,
   popularQuerySchema,
   trendingQuerySchema,
+  searchQuerySchema,
+  discoverQuerySchema,
 } from '@frame/contracts';
 import type {
   MovieParams,
   PopularQuery,
   TrendingQuery,
+  SearchQuery,
+  DiscoverQuery,
 } from '@frame/contracts';
 import { ZodValidationPipe } from '../common/zod-validation.pipe';
 import { CatalogService } from './catalog.service';
@@ -80,6 +84,30 @@ export class CatalogController {
     void _query;
     return catalogContracts.genres.response.parse(
       await this.respond(request, (signal) => this.catalog.genres(signal)),
+    );
+  }
+  @Get('movies/search')
+  @Header('Cache-Control', 'no-store')
+  async search(
+    @Query(new ZodValidationPipe(searchQuerySchema)) query: SearchQuery,
+    @Req() request: Request,
+  ) {
+    return catalogContracts.search.response.parse(
+      await this.respond(request, (signal) =>
+        this.catalog.search(query.q, signal, Number(query.page)),
+      ),
+    );
+  }
+  @Get('movies/discover')
+  @Header('Cache-Control', 'no-store')
+  async discover(
+    @Query(new ZodValidationPipe(discoverQuerySchema)) query: DiscoverQuery,
+    @Req() request: Request,
+  ) {
+    return catalogContracts.discover.response.parse(
+      await this.respond(request, (signal) =>
+        this.catalog.discover(query, signal),
+      ),
     );
   }
   @Get('movies/:tmdbMovieId')

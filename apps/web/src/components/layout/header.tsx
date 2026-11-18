@@ -4,24 +4,38 @@ import { Menu, X, Search, UserRound } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 const links = [
-  { href: '#discover', label: 'Discover' },
+  { href: '/discover', label: 'Discover' },
   { href: '#films', label: 'Films' },
   { href: '#collections', label: 'Collections' },
 ];
 
-export function Header() {
+export function Header({
+  context = 'home',
+}: {
+  context?: 'home' | 'search' | 'discover';
+}) {
+  const searchPage = context === 'search';
+  const secondary = context !== 'home';
+  const home = secondary ? '/' : '';
+  const destination = (href: string) =>
+    href.startsWith('/') ? href : home + href;
   return (
-    <header className="site-header">
+    <header className={`site-header${secondary ? ' site-header-page' : ''}`}>
       <div className="header-inner container-shell">
-        <a href="#discover" aria-label="FRAME home" className="brand">
+        <a href={`${home}#discover`} aria-label="FRAME home" className="brand">
           FRAME<span>.</span>
         </a>
         <nav aria-label="Main navigation" className="desktop-nav">
-          {links.map((link, index) => (
+          {links.map((link) => (
             <a
-              className={`nav-link ${index === 0 ? 'nav-current' : ''}`}
+              className={`nav-link ${context === 'discover' && link.href === '/discover' ? 'nav-current' : ''}`}
               key={link.href}
-              href={link.href}
+              aria-current={
+                context === 'discover' && link.href === '/discover'
+                  ? 'page'
+                  : undefined
+              }
+              href={destination(link.href)}
             >
               {link.label}
             </a>
@@ -31,11 +45,16 @@ export function Header() {
           <Button
             variant="header"
             size="icon"
-            disabled
-            aria-label="Search — coming soon"
-            title="Search is not available yet"
+            className={searchPage ? 'text-primary' : undefined}
+            asChild
           >
-            <Search aria-hidden="true" />
+            <a
+              href="/search"
+              aria-label="Search"
+              aria-current={searchPage ? 'page' : undefined}
+            >
+              <Search aria-hidden="true" />
+            </a>
           </Button>
           <Button
             variant="header"
@@ -81,14 +100,31 @@ export function Header() {
                 >
                   {links.map((link) => (
                     <Dialog.Close key={link.href} asChild>
-                      <a className="py-2 text-xl" href={link.href}>
+                      <a
+                        className="py-2 text-xl"
+                        href={destination(link.href)}
+                        aria-current={
+                          context === 'discover' && link.href === '/discover'
+                            ? 'page'
+                            : undefined
+                        }
+                      >
                         {link.label}
                       </a>
                     </Dialog.Close>
                   ))}
+                  <Dialog.Close asChild>
+                    <a
+                      className="py-2 text-xl"
+                      href="/search"
+                      aria-current={searchPage ? 'page' : undefined}
+                    >
+                      Search
+                    </a>
+                  </Dialog.Close>
                 </nav>
                 <p className="mobile-account-note">
-                  Search and accounts are not available yet.
+                  Accounts are not available yet.
                 </p>
               </Dialog.Content>
             </Dialog.Portal>

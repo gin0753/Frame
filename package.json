@@ -6,6 +6,8 @@
   },
   "scripts": {
     "dev": "pnpm --filter @frame/web run dev",
+    "dev:web": "pnpm --filter web dev",
+    "dev:api": "pnpm --filter api dev",
     "build": "pnpm --filter @frame/web run build",
     "lint": "pnpm --filter @frame/web run lint",
     "typecheck": "pnpm --filter @frame/web run typecheck",

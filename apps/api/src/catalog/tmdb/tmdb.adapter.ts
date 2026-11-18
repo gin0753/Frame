@@ -1,11 +1,17 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { z } from 'zod';
+import {
+  searchQuerySchema,
+  discoverQuerySchema,
+  type DiscoverQuery,
+} from '@frame/contracts';
 import { tmdbConfig } from './tmdb.config';
 import { TmdbError } from './tmdb.error';
 import {
   tmdbDetailSchema,
   tmdbGenresSchema,
   tmdbMoviesSchema,
+  tmdbDiscoveryMoviesSchema,
   tmdbImageConfigSchema,
 } from './tmdb.schemas';
 
@@ -67,6 +73,37 @@ export class TmdbAdapter {
     return this.read('/movie/popular', tmdbMoviesSchema, options, { page });
   }
 
+  search(query: string, options: ReadOptions & { page?: number } = {}) {
+    const parsed = searchQuerySchema.safeParse({
+      q: query,
+      page: String(options.page ?? 1),
+    });
+    if (!parsed.success) throw new TmdbError('INVALID_REQUEST');
+    return this.read('/search/movie', tmdbDiscoveryMoviesSchema, options, {
+      query: parsed.data.q,
+      page: Number(parsed.data.page),
+      include_adult: 'false',
+    });
+  }
+  discover(query: DiscoverQuery, options: ReadOptions = {}) {
+    const parsed = discoverQuerySchema.safeParse(query);
+    if (!parsed.success) throw new TmdbError('INVALID_REQUEST');
+    const { genreId, yearFrom, yearTo, sort } = parsed.data;
+    return this.read('/discover/movie', tmdbDiscoveryMoviesSchema, options, {
+      page: Number(parsed.data.page),
+      include_adult: 'false',
+      include_video: 'false',
+      sort_by: {
+        popular: 'popularity.desc',
+        newest: 'primary_release_date.desc',
+        rated: 'vote_average.desc',
+      }[sort],
+      ...(genreId ? { with_genres: genreId } : {}),
+      ...(yearFrom ? { 'primary_release_date.gte': `${yearFrom}-01-01` } : {}),
+      ...(yearTo ? { 'primary_release_date.lte': `${yearTo}-12-31` } : {}),
+      ...(sort === 'rated' ? { 'vote_count.gte': 100 } : {}),
+    });
+  }
   genres(options: ReadOptions = {}) {
     return this.read('/genre/movie/list', tmdbGenresSchema, options);
   }

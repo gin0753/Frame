@@ -80,18 +80,26 @@ function generateOpenApi() {
       path: contract.path,
       operationId: contract.operationId,
       description:
-        contract === catalogContracts.trending
-          ? 'Weekly by default. Only page 1 is accepted provisionally; multi-page support is UNVERIFIED. Totals are provider-reported and do not imply additional pages are requestable.'
-          : contract === catalogContracts.popular
-            ? 'Pages 1–500; totals capped to 500 pages / 10000 results.'
-            : undefined,
+        contract === catalogContracts.discover
+          ? 'Genre/year/sort discovery, en-US, adult/video excluded. Empty optional controls mean unset. Genre membership requires the current dictionary; lookup failure is availability. Years 1800-2100; From <= To is runtime validated. popular maps to popularity.desc; newest to primary_release_date.desc including upcoming; rated to vote_average.desc with vote_count.gte=100 only. Pages 1-500; pageSize 20; totals capped to 500 pages/10000 results, not exhaustive catalogue size. Duplicate/unknown parameters rejected.'
+          : contract === catalogContracts.search
+            ? 'Title search, en-US, adult results excluded. Query is trimmed, 1–200 characters. Duplicate/unknown parameters are rejected. Pages 1-500; pageSize 20; totals capped to 500 pages/10000 results, not exhaustive catalogue size.'
+            : contract === catalogContracts.trending
+              ? 'Weekly by default. Only page 1 is accepted provisionally; multi-page support is UNVERIFIED. Totals are provider-reported and do not imply additional pages are requestable.'
+              : contract === catalogContracts.popular
+                ? 'Pages 1–500; totals capped to 500 pages / 10000 results.'
+                : undefined,
       request: {
         query: contract.query,
         ...('params' in contract ? { params: contract.params } : {}),
       },
       responses: {
         200: {
-          description: 'Normalized FRAME catalog data.',
+          description:
+            contract === catalogContracts.search ||
+            contract === catalogContracts.discover
+              ? 'Normalized FRAME catalog data. Sparse pages and valid empty pages retain the requested page and actual capped provider totals; generic provider errors remain errors. Live in-bounds out-of-range error compatibility is unverified.'
+              : 'Normalized FRAME catalog data.',
           headers: cache,
           content: { 'application/json': { schema: contract.response } },
         },

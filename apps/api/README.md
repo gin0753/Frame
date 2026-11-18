@@ -1,6 +1,24 @@
 ﻿# FRAME API
 
+## Stage 4.3 URL state and pagination
+
+Search and Discover accept omitted page (default string 1) or unpadded decimal strings 1-500. Duplicate, unknown and malformed parameters remain errors. Both forward the requested page and include it in coordination identity. Both return pageSize 20, totalPages=min(provider,500), totalResults=min(provider,10000), preserving provider ordering. This deliberately supersedes Stage 4.1 Search's preserved totals. Totals are bounded provider metadata, not exhaustive catalogue counts or inferred ordinal ranges. Trending retains its existing provider totals and Trending/Popular retain their existing strict provider validation.
+
+Search/Discover alone use compatibility validation in both adapter and normalizer: safe integer fields, page bounds and identity, at most 20 fully validated movies, nonnegative counts, zero/positive consistency, item count <= totalResults, and no nonempty page beyond total_pages. Sparse/partial pages and empty pages with positive totals are accepted without exact fullness or ceil arithmetic. This is an approved application policy, not verified live TMDB behavior. The shared public MoviePage contract is unchanged.
+
+Valid provider HTTP 200 empty responses retain requested page and actual capped totals. Generic provider errors retain existing safe mappings. In-bounds out-of-range provider error behavior remains unverified; exceptional page-1 recovery is intentionally absent. No retry, retention, database or infrastructure change. The single 2200ms API and 3000ms web budgets remain.
+
+Native GET Search/Apply submissions reset page; Reset clears Discover state. Native Previous/Next anchors derive only from validated applied state; Retry preserves page and tuple. Page 1/default sort/empty optional fields remain equivalent forms without cosmetic redirects. Later empty/unavailable pages offer a tuple-preserving page-1 link.
+
 NestJS Express API with the PostgreSQL foundation. `src/main.ts` creates the application and bootstraps the listener; `AppModule` imports `HealthModule`, `DatabaseModule` and `CatalogModule` (which imports the internal `TmdbModule`). Runtime configuration and sanitized errors remain local to this application. Authentication remains unimplemented; Stage 2.2 catalog reads are documented below.
+
+## Stage 4.1 title search
+
+`GET /api/v1/movies/search?q=...` accepts one required nonblank title query, trims its surrounding whitespace, preserves case/internal whitespace and limits the normalized query to 200 characters. Unknown or repeated parameters are rejected. Page may be omitted or exactly `1`; other pages remain Stage 4.3. The static search handler precedes the numeric movie-ID handler.
+
+TMDB `/search/movie` receives `query`, `page=1`, `include_adult=false` and the existing `en-US` language. Provider order and validated provider totals are preserved in `MoviePage`; totals do not promise accessible additional pages or exhaustive catalogue coverage. Popular-specific caps are not applied. Search has a distinct coordination resource/key including query, page and adult policy. Its TTL is zero and the production retention-rights gate remains unchanged. Existing configuration sharing, cancellation, 2200ms API deadline, no-store headers and safe 429/502/503 mappings apply. No live Search provider verification is claimed.
+
+The web `/search` route renders the first page on the server, with a native GET form and fresh same-query retry. It shows rendered item counts and a first-page notice when appropriate. Discover, filtering, sorting, frontend pagination, autocomplete, internal film details and provider persistence remain outside 4.1. Historical sections below describe their original stage boundaries.
 
 ## Stage 3.2 Homepage consumer
 
@@ -173,3 +191,15 @@ The [official FAQ](https://developer.themoviedb.org/docs/faq), rechecked 29 Octo
 **TMDB logo integration: verified 29 October 2026.** The user supplied the official long blue SVG at `apps/web/public/images/brands/tmdb.svg`. Its download metadata points to TMDB's hosted asset, and an independent in-memory HTTPS comparison returned identical bytes. The Footer TMDB Credits section now links that unchanged, accessible SVG to TMDB, preserving the notice and Blender Credits. Colors, orientation and exact proportions are preserved; the logo is subordinate to FRAME. See [asset provenance](../../docs/movie-assets.md#tmdb-attribution-wordmark-29-october-2026) for the official URL, SHA-256 and safety inspection. The logo page and full applicable agreement remain unavailable to this retrieval tool. Asset/integration verification does not establish complete legal compliance, commercial permission or redistribution rights.
 
 **PROVIDER CONTENT RETENTION: BLOCKED.** The Stage 2.3 gate remains unchanged; cache enablement still fails startup. Snapshot/redistribution rights and the applicable agreement remain unresolved. The separately authorized authenticated smoke on 29 October 2026 reported **REAL TMDB HTTP: PASS**, exit 0: weekly Trending page 1, Popular page 1, genres, movie 11/Star Wars with credits/videos, image configuration and normalized outputs. No responses or movie images were saved. This was not rerun for logo integration and does not verify image decoding, public API/proxy deployment or multi-page Trending. Trending multi-page remains UNVERIFIED. Stage 3 must separately implement live server composition, source-truthful section/editorial labels, bounded detail enrichment, independent section states and real-film screenshot comparison. None is implemented here.
+
+## Stage 4.2 Discover
+
+GET /api/v1/movies/discover accepts optional genreId, yearFrom, yearTo, sort and page. Empty optional genre/year controls are unset; repeated/unknown parameters are rejected. Years are 1800-2100 inclusive and ordered. Sort values are popular (default), newest, rated; omitted page or literal 1 only. The static handler precedes the movie-ID route.
+
+The adapter sends /discover/movie with language=en-US, page=1, include_adult=false and include_video=false. genreId maps to with_genres. Year bounds map only to primary_release_date.gte (January 1) and primary_release_date.lte (December 31). popular maps to popularity.desc; newest to primary_release_date.desc including upcoming; rated to vote_average.desc with vote_count.gte=100 only. No implicit current-date cutoff, custom ranking or detail request per card is used.
+
+A selected genre must belong to the current dictionary before the movie request executes. Dictionary/configuration work shares the existing 2200 ms operation budget; successful membership lookup does not restart it. Unknown IDs are 400 VALIDATION_ERROR; dictionary transport failures retain safe 429/502/503 mapping, never successful unfiltered results. Movie/configuration work preserves existing cancellation and draining. Discover normalization uses the established accessible-provider-range cap (500 pages/10000 results), pageSize 20, and preserves ordering/nulls. Page-one UI availability does not reduce totalPages to one.
+
+Coordination identity includes normalized genre/year bounds, sort, page, language and fixed adult/video/vote policies. Discover TTL is zero; provider retention remains disabled and rights-blocked. Concurrent dictionary reads may coalesce; independent sequential reads are not retained. The web form and API membership validation can therefore cause up to two dictionary provider operations, rather than per-card fan-out. No new infrastructure, persistence or retries are introduced.
+
+Verification: pnpm run contracts:test; pnpm run api:test; pnpm run openapi:check. After building, node --test apps/api/test/discover.test.cjs exercises exact mapping, caps, semantic validation, error categories, identity isolation, disabled retention, cancellation and shared dictionary/movie deadline behavior. Browser verification uses synthetic transport, not authenticated live TMDB data.
