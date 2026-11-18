@@ -1,6 +1,7 @@
 import { apiOrigin } from './config/api-origin.ts';
 import type { NextConfig } from 'next';
 import { localApiRewrites } from './config/local-api-rewrites.ts';
+import { PHASE_DEVELOPMENT_SERVER } from 'next/constants.js';
 
 apiOrigin(process.env.FRAME_API_ORIGIN);
 const nextConfig: NextConfig = {
@@ -26,4 +27,16 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+export default function config(phase: string): NextConfig {
+  return {
+    ...nextConfig,
+    // Prototype entries are not routes (or bundle entry points) in production.
+    pageExtensions: [
+      'tsx',
+      'ts',
+      'jsx',
+      'js',
+      ...(phase === PHASE_DEVELOPMENT_SERVER ? ['dev.tsx'] : []),
+    ],
+  };
+}
