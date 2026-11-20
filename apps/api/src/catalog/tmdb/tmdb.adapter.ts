@@ -11,6 +11,7 @@ import {
   tmdbDetailSchema,
   tmdbGenresSchema,
   tmdbMoviesSchema,
+  tmdbTrendingMoviesSchema,
   tmdbDiscoveryMoviesSchema,
   tmdbImageConfigSchema,
 } from './tmdb.schemas';
@@ -61,7 +62,7 @@ export class TmdbAdapter {
       throw new TmdbError('INVALID_REQUEST');
     return this.read(
       `/trending/movie/${timeWindow}`,
-      tmdbMoviesSchema,
+      tmdbTrendingMoviesSchema,
       options,
     );
   }
