@@ -8,6 +8,12 @@ import { URL as NodeURL } from 'node:url';
 
 afterEach(cleanup);
 
+it('keeps TMDB attribution when local film-asset credits are not applicable', () => {
+  render(<Footer showAssetCredits={false} />);
+  expect(screen.getByRole('group', { name: 'TMDB credits' })).toBeVisible();
+  expect(screen.queryByText(/Imagery © Blender Foundation/)).toBeNull();
+});
+
 it('groups one wordmark and tagline, offers real destinations and keeps a quiet factual closing', () => {
   const { rerender } = render(<Footer />);
   expect(screen.getAllByRole('contentinfo')).toHaveLength(1);

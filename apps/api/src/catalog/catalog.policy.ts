@@ -88,7 +88,7 @@ export function catalogKey(
   return JSON.stringify([
     'tmdb-v3',
     'frame-catalog-v1',
-    'images-w500-w1280',
+    'images-w185-w500-w1280',
     resource,
     language,
     ...parameters,

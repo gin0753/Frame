@@ -6,7 +6,7 @@
 import type { MovieSummary, MovieDetail, Genre } from '@frame/contracts';
 import type { MovieImage, MoviePreview } from '../model';
 
-function artwork(
+export function artwork(
   url: string | null,
   size: 'w500' | 'w1280',
   fallback: MovieImage,

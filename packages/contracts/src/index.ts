@@ -77,7 +77,9 @@ export const movieDetailSchema = movieSummarySchema.extend({
   originalTitle: text.nullable(),
   runtimeMinutes: z.number().int().positive().nullable(),
   directors: z.array(person),
-  cast: z.array(person.extend({ character: text.nullable() })),
+  cast: z.array(
+    person.extend({ character: text.nullable(), profileUrl: url.nullable() }),
+  ),
   countries: z.array(
     z.strictObject({ code: z.string().regex(/^[A-Z]{2}$/), name: text }),
   ),

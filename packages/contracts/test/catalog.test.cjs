@@ -49,6 +49,32 @@ test('strict summary and detail contracts require complete nullable fields and p
     externalLinks: [],
   };
   assert.deepEqual(c.movieDetailSchema.parse(detail), detail);
+  const withCast = {
+    ...detail,
+    cast: [
+      {
+        id: 1,
+        name: 'Actor',
+        character: null,
+        profileUrl: 'https://image.tmdb.org/t/p/w185/profile.jpg',
+      },
+    ],
+  };
+  assert.equal(c.movieDetailSchema.safeParse(withCast).success, true);
+  assert.equal(
+    c.movieDetailSchema.safeParse({
+      ...detail,
+      cast: [{ ...withCast.cast[0], profileUrl: 'not-a-url' }],
+    }).success,
+    false,
+  );
+  assert.equal(
+    c.movieDetailSchema.safeParse({
+      ...detail,
+      cast: [{ id: 1, name: 'Actor', character: null }],
+    }).success,
+    false,
+  );
   for (const patch of [
     { genres: [{ id: 0, name: 'Drama' }] },
     { genres: [{ id: 18, name: ' ' }] },
@@ -121,6 +147,8 @@ test('catalog OpenAPI is generated from route contracts and states provisional p
   assert.ok(detailSchema.properties.originalTitle);
   assert.ok(detailSchema.required.includes('genres'));
   assert.ok(detailSchema.required.includes('originalTitle'));
+  assert.ok(detailSchema.properties.cast.items.properties.profileUrl);
+  assert.ok(detailSchema.properties.cast.items.required.includes('profileUrl'));
   assert.match(
     doc.paths[c.catalogContracts.detail.path].get.responses['404'].description,
     /MOVIE_NOT_FOUND/,

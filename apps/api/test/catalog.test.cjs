@@ -158,6 +158,43 @@ test('pure normalization validates output, preserves identity/votes and does not
   assert.equal(output.originalTitle, 'Original title');
   assert.equal(output.runtimeMinutes, 90);
   assert.equal(output.cast[0].character, null);
+  assert.equal(output.cast[0].profileUrl, null);
+  const withProfile = {
+    ...detail,
+    credits: {
+      ...detail.credits,
+      cast: [{ ...detail.credits.cast[0], profile_path: '/actor.jpg' }],
+    },
+  };
+  assert.equal(
+    n.normalizeMovieDetail(withProfile, {
+      images: { ...config.images, profile_sizes: ['w185'] },
+    }).cast[0].profileUrl,
+    'https://image.tmdb.org/t/p/w185/actor.jpg',
+  );
+  for (const profile_sizes of [undefined, null, 'w185', ['w45']]) {
+    assert.equal(
+      n.normalizeMovieDetail(withProfile, {
+        images: { ...config.images, profile_sizes },
+      }).cast[0].profileUrl,
+      null,
+    );
+  }
+  for (const profile_path of [null, '', '../unsafe.jpg', 12]) {
+    const input = {
+      ...detail,
+      credits: {
+        ...detail.credits,
+        cast: [{ ...detail.credits.cast[0], profile_path }],
+      },
+    };
+    assert.equal(
+      n.normalizeMovieDetail(input, {
+        images: { ...config.images, profile_sizes: ['w185'] },
+      }).cast[0].profileUrl,
+      null,
+    );
+  }
   assert.equal(output.directors[0].name, 'Director');
   assert.equal(output.countries[0].code, 'AU');
   assert.equal(output.languages[0].code, 'en');

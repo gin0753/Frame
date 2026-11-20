@@ -101,6 +101,7 @@ export const tmdbDetailSchema = movie.extend({
         person.extend({
           character: optionalText,
           order: z.number().int().nonnegative(),
+          profile_path: z.unknown().optional(),
         }),
       ),
     })
@@ -128,6 +129,7 @@ export const tmdbImageConfigSchema = z.object({
     backdrop_sizes: z
       .array(z.string())
       .refine((sizes) => sizes.includes('w1280')),
+    profile_sizes: z.unknown().optional(),
   }),
 });
 export type TmdbMovies = z.infer<typeof tmdbMoviesSchema>;

@@ -12,7 +12,7 @@ const links = [
 export function Header({
   context = 'home',
 }: {
-  context?: 'home' | 'search' | 'discover';
+  context?: 'home' | 'search' | 'discover' | 'detail';
 }) {
   const searchPage = context === 'search';
   const secondary = context !== 'home';
@@ -20,7 +20,9 @@ export function Header({
   const destination = (href: string) =>
     href.startsWith('/') ? href : home + href;
   return (
-    <header className={`site-header${secondary ? ' site-header-page' : ''}`}>
+    <header
+      className={`site-header${secondary ? ' site-header-page' : ''}${context === 'detail' ? ' detail-site-header' : ''}`}
+    >
       <div className="header-inner container-shell">
         <a href={`${home}#discover`} aria-label="FRAME home" className="brand">
           FRAME<span>.</span>
