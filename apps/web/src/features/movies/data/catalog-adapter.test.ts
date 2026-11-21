@@ -103,6 +103,7 @@ describe('catalog presentation boundary', () => {
     expect(result.genreIds).toEqual([18, 999, 28]);
     expect(result.movie).toMatchObject({
       id: 'tmdb:42',
+      detailPath: '/movies/42',
       year: null,
       genres: ['Drama', 'Action'],
       synopsis: '',
@@ -116,6 +117,9 @@ describe('catalog presentation boundary', () => {
     expect(summary).toEqual(before);
     expect(toMoviePreview(summary, [], fallbacks).movie.genres).toEqual([]);
   });
+  it.each([0, -1, 1.5, 2147483648])('rejects invalid movie ID %s', (id) => {
+    expect(() => toMoviePreview({ ...summary, id }, [], fallbacks)).toThrow();
+  });
   it('uses verified dates, supplied artwork and one matching detail without fetching', () => {
     const input = {
       ...summary,
@@ -124,6 +128,8 @@ describe('catalog presentation boundary', () => {
     };
     const detail = movieDetailSchema.parse({
       ...input,
+      genres: [],
+      originalTitle: null,
       runtimeMinutes: 90,
       directors: [],
       cast: [],

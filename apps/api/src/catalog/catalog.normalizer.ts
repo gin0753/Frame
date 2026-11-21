@@ -9,6 +9,7 @@ import {
   tmdbDetailSchema,
   tmdbGenreSchema,
   tmdbMoviesSchema,
+  tmdbTrendingMoviesSchema,
   tmdbDiscoveryMoviesSchema,
   tmdbImageConfigSchema,
 } from './tmdb/tmdb.schemas';
@@ -24,6 +25,7 @@ const nullableText = (value: string | null | undefined) =>
   value?.trim() || null;
 const positive = (value: number | null | undefined) =>
   value && value > 0 ? value : null;
+const profilePath = /^\/[A-Za-z0-9_-]+\.(?:jpg|jpeg|png|webp)$/;
 export function normalizeGenre(input: unknown) {
   return genreSchema.parse(tmdbGenreSchema.parse(input));
 }
@@ -58,8 +60,9 @@ export function normalizeMovieDetail(
   config: TmdbImageConfig,
 ) {
   const movie = tmdbDetailSchema.parse(input);
+  const genres = (movie.genres ?? []).map(normalizeGenre);
   const summary = normalizeMovieSummary(
-    { ...movie, genre_ids: movie.genres.map((genre) => genre.id) },
+    { ...movie, genre_ids: genres.map((genre) => genre.id) },
     config,
   );
   const trailer = movie.videos?.results.find(
@@ -71,6 +74,8 @@ export function normalizeMovieDetail(
   );
   return movieDetailSchema.parse({
     ...summary,
+    genres,
+    originalTitle: nullableText(movie.original_title),
     runtimeMinutes: positive(movie.runtime),
     directors: (movie.credits?.crew ?? [])
       .filter((person) => person.job === 'Director')
@@ -78,10 +83,17 @@ export function normalizeMovieDetail(
     cast: [...(movie.credits?.cast ?? [])]
       .sort((a, b) => a.order - b.order)
       .slice(0, 10)
-      .map(({ id, name, character }) => ({
+      .map(({ id, name, character, profile_path }) => ({
         id,
         name,
         character: nullableText(character),
+        profileUrl:
+          Array.isArray(config.images.profile_sizes) &&
+          config.images.profile_sizes.includes('w185') &&
+          typeof profile_path === 'string' &&
+          profilePath.test(profile_path)
+            ? `${config.images.secure_base_url}w185${profile_path}`
+            : null,
       })),
     countries: (movie.production_countries ?? []).map((country) => ({
       code: country.iso_3166_1,
@@ -108,7 +120,11 @@ export function normalizeMoviePage(
   discoveryCompatibility = false,
 ) {
   const page = (
-    discoveryCompatibility ? tmdbDiscoveryMoviesSchema : tmdbMoviesSchema
+    discoveryCompatibility
+      ? tmdbDiscoveryMoviesSchema
+      : preserveProviderTotals
+        ? tmdbTrendingMoviesSchema
+        : tmdbMoviesSchema
   ).parse(input);
   if (page.page !== requestedPage) throw new TmdbError('UNEXPECTED_RESPONSE');
   return moviePageSchema.parse({

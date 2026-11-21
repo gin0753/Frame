@@ -40,6 +40,16 @@ test(
         if (url.pathname === '/3/configuration') return Response.json(config);
         if (url.pathname === '/3/genre/movie/list')
           return Response.json({ genres: [{ id: 18, name: 'Drama' }] });
+        if (url.pathname === '/3/movie/1')
+          return Response.json({ id: 1, title: 'Navigation film', vote_count: 0 });
+        if (['/3/trending/movie/week', '/3/movie/popular'].includes(url.pathname))
+          return Response.json({
+            page: 1, total_pages: 1, total_results: 20,
+            results: Array.from({ length: 20 }, (_, index) => ({
+              id: index + 1, title: `Homepage film ${index + 1}`,
+              vote_count: 0, genre_ids: [18], backdrop_path: '/synthetic.jpg',
+            })),
+          });
         assert.equal(url.pathname, '/3/search/movie');
         const q = url.searchParams.get('query');
         if (q === 'limited' && rateLimited)
@@ -48,7 +58,7 @@ test(
         if (q === 'slow') await new Promise((r) => setTimeout(r, 700));
         const count = q === 'empty' ? 0 : q === 'sparse' ? 2 : 20;
         return Response.json({
-          page: 1,
+          page: Number(url.searchParams.get('page') || 1),
           total_pages: count === 20 ? 2 : count ? 1 : 0,
           total_results: count === 20 ? 40 : count,
           results: Array.from({ length: count }, (_, i) => ({
@@ -70,7 +80,7 @@ test(
     });
     // These sparse terminal fixtures remain useful regressions; pagination.test.cjs also covers sparse nonterminal pages.
     const adapter = app.get(TmdbAdapter);
-    for (const method of ['search', 'genres', 'imageConfiguration'])
+    for (const method of ['search', 'genres', 'imageConfiguration', 'details', 'trending', 'popular'])
       adapter[method] = fake[method].bind(fake);
     let server;
     let browser;
@@ -153,6 +163,33 @@ test(
         }).observe({ type: 'layout-shift', buffered: true });
       });
       const report = { widths: [], states: [], axe: [], cls: [] };
+      for (const width of [393, 1440]) {
+        await page.setViewportSize({ width, height: 900 });
+        const before = calls.filter((call) => call.startsWith('/3/movie/1?')).length;
+        await page.goto(origin + '/search?q=full&page=2', { waitUntil: 'networkidle' });
+        const link = page.getByRole('link', { name: /Explore A deliberately long/ });
+        await expect(link).toHaveAttribute('href', '/movies/1');
+        await link.focus();
+        await expect(link).toBeFocused();
+        assert.equal(calls.filter((call) => call.startsWith('/3/movie/1?')).length, before);
+        await link.press('Enter');
+        await page.waitForURL('**/movies/1');
+        await expect(page.getByRole('heading', { name: 'Navigation film' })).toBeVisible();
+        await page.goBack();
+        await expect(page).toHaveURL(origin + '/search?q=full&page=2');
+        await expect(page.getByRole('link', { name: /Explore A deliberately long/ })).toBeVisible();
+      }
+      await page.goto(origin + '/', { waitUntil: 'networkidle' });
+      const heroLink = page.locator('.hero-content:not([inert])').getByRole('link');
+      await expect(heroLink).toHaveAttribute('href', '/movies/1');
+      for (const section of ['trending', 'films', 'genres'])
+        await expect(page.locator(`#${section} .movie-card-link`).first()).toHaveAttribute('href', /^\/movies\/\d+$/);
+      await heroLink.click();
+      await page.waitForURL('**/movies/1');
+      await expect(page.getByRole('heading', { name: 'Navigation film' })).toBeVisible();
+      await page.goBack();
+      await expect(page).toHaveURL(origin + '/');
+      if (process.env.FRAME_NAVIGATION_ONLY === 'true') return;
       for (const width of [320, 375, 393, 430, 768, 1024, 1440]) {
         await page.setViewportSize({ width, height: 900 });
         await page.goto(origin + '/search');
@@ -162,7 +199,7 @@ test(
           /noindex/,
         );
         await expect(
-          page.getByRole('link', { name: 'Search', exact: true }),
+          page.locator('header').getByRole('link', { name: 'Search', exact: true }),
         ).toHaveCSS('color', 'rgb(217, 156, 103)');
         await page.screenshot({
           path: path.join(evidence, `${width}-initial.png`),
@@ -218,7 +255,7 @@ test(
             );
             await expect(
               page.getByRole('link', { name: /Explore A deliberately long/ }),
-            ).toHaveAttribute('href', 'https://www.themoviedb.org/movie/1');
+            ).toHaveAttribute('href', '/movies/1');
           } else
             await expect(
               page.getByText(

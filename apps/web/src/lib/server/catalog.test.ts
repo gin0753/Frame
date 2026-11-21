@@ -16,6 +16,101 @@ afterEach(() => {
   vi.unstubAllEnvs();
 });
 describe('server catalog consumer', () => {
+  it('validates a successful detail response', async () => {
+    vi.stubEnv('FRAME_API_ORIGIN', 'http://127.0.0.1:3001');
+    const detail = {
+      id: 42,
+      source: 'tmdb',
+      title: 'Film',
+      originalTitle: 'Original',
+      releaseDate: null,
+      posterUrl: null,
+      backdropUrl: null,
+      genreIds: [18],
+      genres: [{ id: 18, name: 'Drama' }],
+      voteAverage: null,
+      voteCount: 0,
+      overview: null,
+      externalUrl: 'https://www.themoviedb.org/movie/42',
+      attribution: {
+        provider: 'tmdb',
+        sourceUrl: 'https://www.themoviedb.org/movie/42',
+      },
+      runtimeMinutes: null,
+      directors: [],
+      cast: [],
+      countries: [],
+      languages: [],
+      budgetUsd: null,
+      revenueUsd: null,
+      trailerUrl: null,
+      externalLinks: [],
+    };
+    const fetch = vi.fn().mockResolvedValue(Response.json(detail));
+    vi.stubGlobal('fetch', fetch);
+    await expect(getMovieDetail({ tmdbMovieId: '42' })).resolves.toEqual(
+      detail,
+    );
+    expect(fetch.mock.calls[0][0]).toBe(
+      'http://127.0.0.1:3001/api/v1/movies/42',
+    );
+  });
+  it('distinguishes detail not found and rate limits from availability failures', async () => {
+    vi.stubEnv('FRAME_API_ORIGIN', 'http://127.0.0.1:3001');
+    const fetch = vi.fn();
+    vi.stubGlobal('fetch', fetch);
+    const envelope = {
+      error: {
+        code: 'MOVIE_NOT_FOUND',
+        message: 'Not Found',
+        requestId: 'req_12345678-1234-4123-8123-123456789abc',
+      },
+    };
+    fetch.mockResolvedValueOnce(Response.json(envelope, { status: 404 }));
+    await expect(getMovieDetail({ tmdbMovieId: '42' })).rejects.toEqual(
+      new CatalogReadError(404),
+    );
+    for (const response of [
+      Response.json(
+        { error: { ...envelope.error, code: 'NOT_FOUND' } },
+        { status: 404 },
+      ),
+      new Response(null, { status: 404 }),
+      new Response('{', {
+        status: 404,
+        headers: { 'content-type': 'application/json' },
+      }),
+      new Response('<html>Not Found</html>', {
+        status: 404,
+        headers: { 'content-type': 'text/html' },
+      }),
+      Response.json({ error: { code: 'MOVIE_NOT_FOUND' } }, { status: 404 }),
+    ]) {
+      fetch.mockResolvedValueOnce(response);
+      await expect(getMovieDetail({ tmdbMovieId: '42' })).rejects.toEqual(
+        new CatalogReadError(503),
+      );
+    }
+    for (const [status, expected] of [
+      [429, 429],
+      [502, 503],
+      [503, 503],
+    ]) {
+      fetch.mockResolvedValueOnce(new Response(null, { status }));
+      await expect(getMovieDetail({ tmdbMovieId: '42' })).rejects.toEqual(
+        new CatalogReadError(expected),
+      );
+    }
+    fetch.mockRejectedValueOnce(new DOMException('timeout', 'TimeoutError'));
+    await expect(getMovieDetail({ tmdbMovieId: '42' })).rejects.toEqual(
+      new CatalogReadError(503),
+    );
+    for (const tmdbMovieId of ['0', '2147483648', '01'])
+      expect(() => getMovieDetail({ tmdbMovieId })).toThrow();
+    expect(fetch).toHaveBeenCalledTimes(10);
+    fetch.mockResolvedValueOnce(new Response(null, { status: 404 }));
+    await expect(getCatalogGenres()).rejects.toEqual(new CatalogReadError(503));
+  });
   it('encodes normalized searches and safely preserves rate limits', async () => {
     vi.stubEnv('FRAME_API_ORIGIN', 'http://127.0.0.1:3001');
     const fetch = vi

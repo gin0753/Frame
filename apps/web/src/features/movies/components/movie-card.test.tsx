@@ -13,6 +13,7 @@ it('renders a live destination without empty metadata or fixture recognition', (
   const movie = {
     ...movieFixtures[0],
     id: 'tmdb:42',
+    detailPath: '/movies/42',
     title: 'Live movie',
     year: null,
     genres: [],
@@ -28,8 +29,10 @@ it('renders a live destination without empty metadata or fixture recognition', (
     </>,
   );
   expect(
-    screen.getAllByRole('link', { name: 'Explore Live movie on TMDB' }),
+    screen.getAllByRole('link', { name: 'Explore Live movie' }),
   ).toHaveLength(2);
+  for (const link of screen.getAllByRole('link', { name: 'Explore Live movie' }))
+    expect(link).toHaveAttribute('href', '/movies/42');
   expect(container.querySelector('.hero-metadata')?.children).toHaveLength(0);
   expect(container.querySelector('.movie-genres')).toBeNull();
   expect(container.querySelector('.recognition-link')).toBeNull();

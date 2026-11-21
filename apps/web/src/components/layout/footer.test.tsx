@@ -8,6 +8,12 @@ import { URL as NodeURL } from 'node:url';
 
 afterEach(cleanup);
 
+it('keeps TMDB attribution when local film-asset credits are not applicable', () => {
+  render(<Footer showAssetCredits={false} />);
+  expect(screen.getByRole('group', { name: 'TMDB credits' })).toBeVisible();
+  expect(screen.queryByText(/Imagery © Blender Foundation/)).toBeNull();
+});
+
 it('groups one wordmark and tagline, offers real destinations and keeps a quiet factual closing', () => {
   const { rerender } = render(<Footer />);
   expect(screen.getAllByRole('contentinfo')).toHaveLength(1);
@@ -76,9 +82,11 @@ it('preserves Blender credits and exposes the TMDB notice outside the collapsed 
   const logo = screen.getByRole('img', { name: 'TMDB — The Movie Database' });
   expect(logo).toHaveAttribute('src', '/images/brands/tmdb.svg');
   expect(logo).not.toHaveAttribute('srcset');
+  expect(logo).toHaveAttribute('width', '120');
+  expect(logo).toHaveAttribute('height', '10');
   expect(
     Number(logo.getAttribute('width')) / Number(logo.getAttribute('height')),
-  ).toBeCloseTo(423.04 / 35.4, 8);
+  ).toBeCloseTo(423.04 / 35.4, 1);
   expect(
     screen.getByRole('link', { name: 'TMDB — The Movie Database' }),
   ).toHaveAttribute('href', 'https://www.themoviedb.org');

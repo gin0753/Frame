@@ -38,6 +38,8 @@ const page = (items: MovieSummary[]) => ({
 const detail: MovieDetail = {
   ...movie(1),
   overview: 'Detail overview',
+  genres: [{ id: 18, name: 'Drama' }],
+  originalTitle: null,
   runtimeMinutes: 90,
   directors: [],
   cast: [],
@@ -91,6 +93,25 @@ it('shares one trending read, enriches only hero, and forms a distinct live genr
   });
   expect(catalog.getMovieDetail).toHaveBeenCalledTimes(1);
   expect(catalog.getMovieDetail).toHaveBeenCalledWith({ tmdbMovieId: '1' });
+});
+it('uses a sparse Trending page for hero and rail when detail enrichment fails', async () => {
+  const items = Array.from({ length: 19 }, (_, index) => movie(index + 1));
+  vi.mocked(catalog.getTrendingMovies).mockResolvedValue({
+    ...page(items),
+    totalPages: 500,
+    totalResults: 10000,
+  });
+  vi.mocked(catalog.getMovieDetail).mockRejectedValue(new Error('unavailable'));
+  const data = createHomepageData();
+  expect((await data.hero)[0]).toMatchObject({
+    id: 'tmdb:1',
+    synopsis: 'Summary',
+  });
+  const trending = await data.trending;
+  expect(trending.status).toBe('success');
+  if (trending.status === 'success') expect(trending.data).toHaveLength(14);
+  expect((await data.popular).status).toBe('success');
+  expect(catalog.getTrendingMovies).toHaveBeenCalledTimes(1);
 });
 it.each(['getTrendingMovies', 'getPopularMovies', 'getCatalogGenres'] as const)(
   'isolates %s failure',

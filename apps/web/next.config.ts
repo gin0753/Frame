@@ -6,7 +6,7 @@ import { PHASE_DEVELOPMENT_SERVER } from 'next/constants.js';
 apiOrigin(process.env.FRAME_API_ORIGIN);
 const nextConfig: NextConfig = {
   images: {
-    remotePatterns: ['w500', 'w1280'].map((size) => ({
+    remotePatterns: ['w185', 'w500', 'w1280'].map((size) => ({
       protocol: 'https' as const,
       hostname: 'image.tmdb.org',
       port: '',

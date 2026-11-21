@@ -263,7 +263,7 @@ it('successful movies render immediately without an optional dictionary, omit mi
     }),
   );
   expect(
-    screen.getByRole('link', { name: 'Explore Synthetic film on TMDB' }),
+    screen.getByRole('link', { name: 'Explore Synthetic film' }),
   ).toBeVisible();
   expect(
     screen.getByRole('heading', { name: 'Films to discover — 1 film' }),

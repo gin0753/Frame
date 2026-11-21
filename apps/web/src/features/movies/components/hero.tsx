@@ -1,4 +1,5 @@
 import { MovieArtwork } from './movie-artwork';
+import Link from 'next/link';
 import { ArrowUpRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import type { MoviePreview } from '../model';
@@ -34,6 +35,7 @@ export function HeroContent({
 }) {
   const Heading = active ? 'h1' : 'div';
   const runtime = formatRuntime(movie.runtimeSeconds);
+  const HeroLink = movie.detailPath ? Link : 'a';
   return (
     <div
       className={`hero-content container-shell ${active ? '' : 'hero-content-inactive'}`}
@@ -54,12 +56,13 @@ export function HeroContent({
         {runtime && <span>{runtime}</span>}
       </div>
       <Button variant="light" asChild className="hero-button max-md:min-h-12">
-        <a
-          href={movie.exploreUrl}
-          aria-label={`Explore ${movie.title} on ${movie.destinationLabel ?? 'Blender Studio'}`}
+        <HeroLink
+          href={movie.detailPath ?? movie.exploreUrl}
+          {...(movie.detailPath ? { prefetch: false } : {})}
+          aria-label={movie.detailPath ? `Explore ${movie.title}` : `Explore ${movie.title} on ${movie.destinationLabel ?? 'Blender Studio'}`}
         >
           Explore Film <ArrowUpRight className="size-4" aria-hidden="true" />
-        </a>
+        </HeroLink>
       </Button>
     </div>
   );

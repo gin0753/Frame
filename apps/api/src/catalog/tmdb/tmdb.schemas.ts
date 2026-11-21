@@ -29,23 +29,33 @@ export const tmdbSummarySchema = movie.extend({
   genre_ids: z.array(id),
   media_type: z.literal('movie').optional(),
 });
-export const tmdbMoviesSchema = z
-  .object({
-    page: z.number().int().positive().max(500),
-    results: z.array(tmdbSummarySchema).max(20),
-    total_pages: z.number().int().nonnegative(),
-    total_results: z.number().int().nonnegative(),
-  })
-  .refine((page) => {
-    if (page.total_results === 0)
-      return page.total_pages === 0 && page.results.length === 0;
-    if (page.total_pages !== Math.ceil(page.total_results / 20)) return false;
-    const expected =
-      page.page > page.total_pages
-        ? 0
-        : Math.min(20, page.total_results - (page.page - 1) * 20);
-    return page.results.length === expected;
-  });
+const tmdbPage = z.object({
+  page: z.number().int().positive().max(500),
+  results: z.array(tmdbSummarySchema).max(20),
+  total_pages: z.number().int().nonnegative(),
+  total_results: z.number().int().nonnegative(),
+});
+export const tmdbMoviesSchema = tmdbPage.refine((page) => {
+  if (page.total_results === 0)
+    return page.total_pages === 0 && page.results.length === 0;
+  if (page.total_pages !== Math.ceil(page.total_results / 20)) return false;
+  const expected =
+    page.page > page.total_pages
+      ? 0
+      : Math.min(20, page.total_results - (page.page - 1) * 20);
+  return page.results.length === expected;
+});
+// Trending's first page may be sparse even when provider totals describe full pages.
+export const tmdbTrendingMoviesSchema = tmdbPage.refine((page) => {
+  if (page.page !== 1) return false;
+  if (page.total_results === 0)
+    return page.total_pages === 0 && page.results.length === 0;
+  return (
+    page.total_pages === Math.ceil(page.total_results / 20) &&
+    page.results.length > 0 &&
+    page.results.length <= page.total_results
+  );
+});
 // Application compatibility policy for Search/Discover, not a live-provider guarantee.
 export const tmdbDiscoveryMoviesSchema = z
   .object({
@@ -66,7 +76,8 @@ export const tmdbDiscoveryMoviesSchema = z
 export const tmdbGenresSchema = z.object({ genres: z.array(tmdbGenreSchema) });
 const person = z.object({ id, name: text });
 export const tmdbDetailSchema = movie.extend({
-  genres: z.array(tmdbGenreSchema),
+  genres: z.array(tmdbGenreSchema).nullable().optional(),
+  original_title: optionalText,
   runtime: z.number().int().nonnegative().nullable().optional(),
   budget: z.number().int().nonnegative().nullable().optional(),
   revenue: z.number().int().nonnegative().nullable().optional(),
@@ -90,6 +101,7 @@ export const tmdbDetailSchema = movie.extend({
         person.extend({
           character: optionalText,
           order: z.number().int().nonnegative(),
+          profile_path: z.unknown().optional(),
         }),
       ),
     })
@@ -117,6 +129,7 @@ export const tmdbImageConfigSchema = z.object({
     backdrop_sizes: z
       .array(z.string())
       .refine((sizes) => sizes.includes('w1280')),
+    profile_sizes: z.unknown().optional(),
   }),
 });
 export type TmdbMovies = z.infer<typeof tmdbMoviesSchema>;

@@ -1,4 +1,5 @@
 import { MovieArtwork } from './movie-artwork';
+import Link from 'next/link';
 import { ArrowUpRight } from 'lucide-react';
 import type { MoviePreview } from '../model';
 import { cn } from '@/lib/utils';
@@ -17,14 +18,18 @@ export function MovieCard({
   labelMetadata?: boolean;
 }) {
   const artwork = variant === 'poster' ? movie.poster : movie.backdrop;
+  const CardLink = movie.detailPath ? Link : 'a';
   return (
     <article className={cn('movie-card', `movie-card-${variant}`)}>
-      <a
-        href={movie.exploreUrl}
+      <CardLink
+        href={movie.detailPath ?? movie.exploreUrl}
+        {...(movie.detailPath ? { prefetch: false } : {})}
         aria-label={
           labelMetadata
             ? undefined
-            : `Explore ${movie.title} on ${movie.destinationLabel ?? 'Blender Studio'}`
+            : movie.detailPath
+              ? `Explore ${movie.title}`
+              : `Explore ${movie.title} on ${movie.destinationLabel ?? 'Blender Studio'}`
         }
         className="movie-card-link group"
         draggable={false}
@@ -56,13 +61,13 @@ export function MovieCard({
           {movie.year !== null && <span>{movie.year}</span>}
         </div>
         {movie.genres[0] && <p className="movie-genres">{movie.genres[0]}</p>}
-        {labelMetadata && (
+        {labelMetadata && !movie.detailPath && (
           <span className="sr-only">
             {' '}
             on {movie.destinationLabel ?? 'Blender Studio'}
           </span>
         )}
-      </a>
+      </CardLink>
       {recognition && movie.recognition && (
         <a href={movie.recognition.sourceUrl} className="recognition-link">
           {movie.recognition.label}

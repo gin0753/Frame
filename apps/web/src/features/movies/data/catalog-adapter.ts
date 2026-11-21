@@ -6,7 +6,7 @@
 import type { MovieSummary, MovieDetail, Genre } from '@frame/contracts';
 import type { MovieImage, MoviePreview } from '../model';
 
-function artwork(
+export function artwork(
   url: string | null,
   size: 'w500' | 'w1280',
   fallback: MovieImage,
@@ -48,6 +48,7 @@ export function toMoviePreview(
     genreIds: [...summary.genreIds],
     movie: {
       id: `tmdb:${summary.id}`,
+      detailPath: `/movies/${summary.id}`,
       title: summary.title,
       year: summary.releaseDate
         ? Number(summary.releaseDate.slice(0, 4))

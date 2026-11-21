@@ -1,6 +1,12 @@
 import Image from 'next/image';
 import { assetCredits } from '@/features/movies/data/asset-credits';
-export function Footer({ homeHref = '#discover' }: { homeHref?: string }) {
+export function Footer({
+  homeHref = '#discover',
+  showAssetCredits = true,
+}: {
+  homeHref?: string;
+  showAssetCredits?: boolean;
+}) {
   return (
     <footer className="site-footer container-shell">
       <div className="footer-top">
@@ -26,8 +32,8 @@ export function Footer({ homeHref = '#discover' }: { homeHref?: string }) {
             <Image
               src="/images/brands/tmdb.svg"
               alt="TMDB — The Movie Database"
-              width={42304}
-              height={3540}
+              width={120}
+              height={10}
               className="h-auto w-30"
               unoptimized
             />
@@ -38,29 +44,31 @@ export function Footer({ homeHref = '#discover' }: { homeHref?: string }) {
           </p>
         </div>
 
-        <details id="credits" className="asset-credits">
-          <summary>
-            Imagery © Blender Foundation · Creative Commons Attribution
-          </summary>
-          <p>
-            Film imagery © Blender Foundation, used under Creative Commons
-            Attribution. Stills resized, compressed and cropped; poster-format
-            artwork is a FRAME crop, not an official release poster. FRAME is an
-            independent prototype with no Blender affiliation.
-          </p>
-          <ul>
-            {assetCredits.map((credit) => (
-              <li key={credit.title}>
-                <a href={credit.source}>{credit.title}</a> —{' '}
-                <a href={credit.policy}>{credit.license}</a>
-              </li>
-            ))}
-          </ul>
-          <p>
-            See each project’s linked policy for its attribution and license
-            terms.
-          </p>
-        </details>
+        {showAssetCredits && (
+          <details id="credits" className="asset-credits">
+            <summary>
+              Imagery © Blender Foundation · Creative Commons Attribution
+            </summary>
+            <p>
+              Film imagery © Blender Foundation, used under Creative Commons
+              Attribution. Stills resized, compressed and cropped; poster-format
+              artwork is a FRAME crop, not an official release poster. FRAME is
+              an independent prototype with no Blender affiliation.
+            </p>
+            <ul>
+              {assetCredits.map((credit) => (
+                <li key={credit.title}>
+                  <a href={credit.source}>{credit.title}</a> —{' '}
+                  <a href={credit.policy}>{credit.license}</a>
+                </li>
+              ))}
+            </ul>
+            <p>
+              See each project’s linked policy for its attribution and license
+              terms.
+            </p>
+          </details>
+        )}
       </div>
       <p className="footer-bottom">© 2026 FRAME</p>
     </footer>

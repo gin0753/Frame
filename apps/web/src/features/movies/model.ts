@@ -15,7 +15,9 @@ export interface MoviePreview {
   runtimeSeconds: number | null;
   backdrop: MovieImage;
   poster: MovieImage;
-  /** Verified official destination until internal film routes exist. */
+  /** Validated internal FRAME movie-detail destination, when available. */
+  detailPath?: string;
+  /** Existing external/provider destination. */
   exploreUrl: string;
   destinationLabel?: 'TMDB' | 'Blender Studio';
   recognition?: { label: string; sourceUrl: string };

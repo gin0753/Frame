@@ -77,6 +77,21 @@ const next = () => {
 };
 const title = () => screen.getByRole('heading', { level: 1 }).textContent;
 
+it('exposes only the active featured film detail link', () => {
+  const live = movies.map((movie, index) => ({
+    ...movie,
+    detailPath: `/movies/${index + 1}`,
+  }));
+  renderReady(live);
+  expect(screen.getAllByRole('link')).toHaveLength(1);
+  expect(screen.getByRole('link', { name: `Explore ${live[0].title}` }))
+    .toHaveAttribute('href', '/movies/1');
+  next();
+  expect(screen.getAllByRole('link')).toHaveLength(1);
+  expect(screen.getByRole('link', { name: `Explore ${live[1].title}` }))
+    .toHaveAttribute('href', '/movies/2');
+});
+
 it('starts with one accessible slide and advances only at five seconds, silently', () => {
   renderReady();
   expect(title()).toBe(movies[0].title);

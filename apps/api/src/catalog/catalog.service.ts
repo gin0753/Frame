@@ -3,7 +3,6 @@
   BadRequestException,
   Inject,
   Injectable,
-  NotFoundException,
 } from '@nestjs/common';
 import {
   genresResponseSchema,
@@ -24,7 +23,10 @@ import {
 } from './catalog.coordinator';
 import { CATALOG_DEADLINE_MS, catalogKey } from './catalog.policy';
 export { CATALOG_DEADLINE_MS } from './catalog.policy';
-import { CatalogUnavailableException } from '../common/catalog-unavailable.exception';
+import {
+  CatalogUnavailableException,
+  MovieNotFoundException,
+} from '../common/catalog-unavailable.exception';
 import {
   normalizeGenre,
   normalizeMovieDetail,
@@ -272,7 +274,7 @@ export class CatalogService {
                     error instanceof TmdbError &&
                     error.category === 'NOT_FOUND'
                   )
-                    throw new NotFoundException();
+                    throw new MovieNotFoundException();
                   throw error;
                 }
               },

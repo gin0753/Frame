@@ -283,7 +283,7 @@ test('real HTTP provider failures remain safe, are not retried or cached, and in
     for (const [mode, target, status, code] of [
       ['401', '/3/movie/42', 503, 'CATALOG_UNAVAILABLE'],
       ['403', '/3/movie/42', 503, 'CATALOG_UNAVAILABLE'],
-      ['404', '/3/movie/42', 404, 'NOT_FOUND'],
+      ['404', '/3/movie/42', 404, 'MOVIE_NOT_FOUND'],
       ['429', '/3/movie/42', 429, 'RATE_LIMITED'],
       ['500', '/3/movie/42', 502, 'CATALOG_UNAVAILABLE'],
       ['network', '/3/movie/42', 502, 'CATALOG_UNAVAILABLE'],

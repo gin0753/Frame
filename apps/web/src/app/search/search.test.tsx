@@ -141,8 +141,8 @@ it('retains available genre labels with one concurrent request per resource', as
   render(await result);
   expect(screen.getByText('Drama')).toBeVisible();
   expect(
-    screen.getByRole('link', { name: 'Explore Alien 1979 Drama on TMDB' }),
-  ).toHaveAttribute('href', 'https://www.themoviedb.org/movie/42');
+    screen.getByRole('link', { name: 'Explore Alien 1979 Drama' }),
+  ).toHaveAttribute('href', '/movies/42');
   expect(searchMovies).toHaveBeenCalledTimes(1);
   expect(getCatalogGenres).toHaveBeenCalledTimes(1);
 });
@@ -158,7 +158,7 @@ it('handles an early Genres rejection while Search is pending and retains the mo
   search.resolve(populatedPage);
   render(await result);
   expect(
-    screen.getByRole('link', { name: 'Explore Alien 1979 on TMDB' }),
+    screen.getByRole('link', { name: 'Explore Alien 1979' }),
   ).toBeVisible();
   expect(screen.queryByText('Drama')).not.toBeInTheDocument();
   expect(searchMovies).toHaveBeenCalledTimes(1);
@@ -174,7 +174,7 @@ it('does not await Genres for movies without genre identities', async () => {
   });
   render(await SearchResults({ q: 'Alien' }));
   expect(
-    screen.getByRole('link', { name: 'Explore Alien 1979 on TMDB' }),
+    screen.getByRole('link', { name: 'Explore Alien 1979' }),
   ).toBeVisible();
   genres.reject(new Error('Unused dictionary failure'));
   await setImmediate();
@@ -283,8 +283,8 @@ it('preserves metadata/destination and pagination when the dictionary fails', as
   });
   render(await SearchResults({ q: 'Long' }));
   expect(
-    screen.getByRole('link', { name: 'Explore Long title on TMDB' }),
-  ).toHaveAttribute('href', 'https://www.themoviedb.org/movie/42');
+    screen.getByRole('link', { name: 'Explore Long title' }),
+  ).toHaveAttribute('href', '/movies/42');
   expect(screen.getByText('Showing 1 film.')).toBeVisible();
   expect(screen.getByText('Page 1 of 2')).toBeVisible();
   const jump = screen.getByRole('form', {

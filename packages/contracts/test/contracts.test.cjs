@@ -48,6 +48,7 @@ test('literal values, error codes, UUID and nested error fields', () => {
     'UNAUTHENTICATED',
     'FORBIDDEN',
     'NOT_FOUND',
+    'MOVIE_NOT_FOUND',
     'CONFLICT',
     'RATE_LIMITED',
     'INTERNAL_ERROR',
