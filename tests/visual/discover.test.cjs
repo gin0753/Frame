@@ -57,6 +57,8 @@ test(
       fetch: async (url) => {
         calls.push(url.pathname + url.search);
         if (url.pathname === '/3/configuration') return Response.json(config);
+        if (url.pathname === '/3/movie/1')
+          return Response.json({ id: 1, title: 'Navigation film', vote_count: 0 });
         if (url.pathname === '/3/genre/movie/list') {
           if (dictionaryMode === 'held' && (await dictionaryGate))
             return new Response(null, { status: 500 });
@@ -109,7 +111,7 @@ test(
         if (mode === 'slow') await new Promise((r) => setTimeout(r, 700));
         const count = mode === 'empty' ? 0 : mode === 'sparse' ? 2 : 20;
         return Response.json({
-          page: 1,
+          page: Number(url.searchParams.get('page') || 1),
           total_pages: count === 20 ? 2 : count ? 1 : 0,
           total_results: count === 20 ? 40 : count,
           results: Array.from({ length: count }, (_, i) => ({
@@ -133,6 +135,7 @@ test(
     const adapter = app.get(TmdbAdapter);
     for (const method of [
       'discover',
+      'details',
       'genres',
       'imageConfiguration',
       ...(process.env.FRAME_STAGE44_PERFORMANCE === 'true' ||
@@ -311,6 +314,58 @@ test(
         requests: [],
         layouts: [],
       };
+      const detailCalls = () =>
+        calls.filter((call) => /^\/3\/movie\/\d+(?:\?|$)/.test(call));
+      let permittedDetailCalls = detailCalls();
+      assert.deepEqual(permittedDetailCalls, [], 'no detail request before navigation');
+      for (const width of [393, 1440]) {
+        await page.setViewportSize({ width, height: 900 });
+        const before = detailCalls();
+        await page.goto(origin + '/discover?genreId=18&sort=rated&page=2', { waitUntil: 'networkidle' });
+        const link = page.getByRole('link', { name: /Explore A deliberately long/ });
+        await expect(link).toHaveAttribute('href', '/movies/1');
+        assert.deepEqual(detailCalls(), before, 'render must not prefetch details');
+        await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+        await page.waitForLoadState('networkidle');
+        assert.deepEqual(detailCalls(), before, 'scroll must not prefetch details');
+        await link.scrollIntoViewIfNeeded();
+        await link.hover();
+        await link.focus();
+        await expect(link).toBeFocused();
+        await page.waitForLoadState('networkidle');
+        assert.deepEqual(detailCalls(), before, 'hover and focus must not prefetch details');
+        await link.click();
+        await page.waitForURL('**/movies/1');
+        await expect(page.getByRole('heading', { name: 'Navigation film' })).toBeVisible();
+        const requested = detailCalls().slice(before.length);
+        assert.ok(requested.length > 0, 'navigation must request detail');
+        assert.ok(requested.every((call) => /^\/3\/movie\/1(?:\?|$)/.test(call)), JSON.stringify(requested));
+        permittedDetailCalls = detailCalls();
+        await page.goBack();
+        await expect(page).toHaveURL(origin + '/discover?genreId=18&sort=rated&page=2');
+        await expect(page.getByRole('link', { name: /Explore A deliberately long/ })).toBeVisible();
+        await page.waitForLoadState('networkidle');
+        assert.deepEqual(detailCalls(), permittedDetailCalls, 'Back must not prefetch details');
+      }
+      const verifyPendingGenre = async () => {
+        const before = calls.filter((call) => call.startsWith('/3/genre/movie/list')).length;
+        holdDictionary();
+        try {
+          await page.goto(origin + '/discover', { waitUntil: 'commit' });
+          await expect.poll(() => calls.filter((call) => call.startsWith('/3/genre/movie/list')).length)
+            .toBeGreaterThan(before);
+          await expect(page.getByLabel('Genre', { exact: true })).toBeDisabled();
+          await expect(page.locator('.movie-card')).toHaveCount(20);
+          await expect(page.getByLabel('Genre', { exact: true })).toBeDisabled();
+        } finally {
+          finishDictionary(false);
+        }
+        await expect(page.getByLabel('Genre', { exact: true })).toBeEnabled();
+      };
+      if (process.env.FRAME_NAVIGATION_ONLY === 'true') {
+        await verifyPendingGenre();
+        return;
+      }
       const inspectLayout = async (width, state) => {
         // Fonts can be ready before the stylesheet has applied the footer width.
         await expect(page.getByRole('img', { name: 'TMDB — The Movie Database' }))
@@ -647,11 +702,7 @@ test(
           width,
           state: 'dictionary-failed-selected-and-default',
         });
-        dictionaryMode = 'slow';
-        await page.goto(origin + '/discover', { waitUntil: 'commit' });
-        await expect(page.locator('.movie-card')).toHaveCount(20);
-        await expect(page.getByLabel('Genre', { exact: true })).toBeDisabled();
-        await expect(page.getByLabel('Genre', { exact: true })).toBeEnabled();
+        await verifyPendingGenre();
         report.states.push({ width, state: 'slow-optional-dictionary' });
         dictionaryMode = 'normal';
         mode = 'slow';
@@ -778,10 +829,7 @@ test(
           'This product uses the TMDB API but is not endorsed or certified by TMDB.',
         ),
       ).toBeVisible();
-      assert.equal(
-        calls.some((c) => /^\/3\/movie\/\d+/.test(c)),
-        false,
-      );
+      assert.deepEqual(detailCalls(), permittedDetailCalls, 'only intentional navigation may request details');
       assert.deepEqual(errors, []);
       await fs.writeFile(
         path.join(evidence, 'summary.json'),
@@ -799,6 +847,7 @@ test(
       );
       console.log('Discover evidence:', evidence);
     } finally {
+      finishDictionary(false);
       await browser?.close();
       if (server && server.exitCode === null) {
         server.kill();

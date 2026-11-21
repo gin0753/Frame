@@ -48,6 +48,7 @@ export function toMoviePreview(
     genreIds: [...summary.genreIds],
     movie: {
       id: `tmdb:${summary.id}`,
+      detailPath: `/movies/${summary.id}`,
       title: summary.title,
       year: summary.releaseDate
         ? Number(summary.releaseDate.slice(0, 4))
