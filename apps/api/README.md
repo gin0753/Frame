@@ -203,3 +203,7 @@ A selected genre must belong to the current dictionary before the movie request 
 Coordination identity includes normalized genre/year bounds, sort, page, language and fixed adult/video/vote policies. Discover TTL is zero; provider retention remains disabled and rights-blocked. Concurrent dictionary reads may coalesce; independent sequential reads are not retained. The web form and API membership validation can therefore cause up to two dictionary provider operations, rather than per-card fan-out. No new infrastructure, persistence or retries are introduced.
 
 Verification: pnpm run contracts:test; pnpm run api:test; pnpm run openapi:check. After building, node --test apps/api/test/discover.test.cjs exercises exact mapping, caps, semantic validation, error categories, identity isolation, disabled retention, cancellation and shared dictionary/movie deadline behavior. Browser verification uses synthetic transport, not authenticated live TMDB data.
+
+## Stage 6.1A A1 authentication foundation
+
+The Session schema and planned auth contracts are specified in [ADR-002](../../docs/decisions/adr-002-authentication-and-ingress.md). A1 does not implement auth routes, password hashing, sessions or cookie behavior. Migration deployment must precede A2 code; never edit the foundation migration. Removing the new table on rollback invalidates all sessions, so coordinate application rollback and backup first. Production ingress, throttling, email verification/recovery and cleanup gates remain open.

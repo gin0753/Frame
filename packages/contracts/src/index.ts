@@ -37,6 +37,111 @@ export const apiErrorSchema = z.strictObject({
 });
 export type ApiError = z.infer<typeof apiErrorSchema>;
 
+// Normalize before validating so HTTP input and persisted email use one policy.
+const authEmail = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .max(254)
+  .email()
+  .describe(
+    'Trimmed and lowercased before validation. OpenAPI length and format keywords cannot exactly model normalization.',
+  );
+const authDisplayName = z
+  .string()
+  .trim()
+  .min(1)
+  .max(100)
+  .describe(
+    'Outer whitespace is trimmed before validation; limits count UTF-16 code units. OpenAPI string lengths count Unicode code points and do not model trimming.',
+  );
+// Count UTF-8 bytes without a Node or browser-specific dependency.
+const utf8Length = (value: string) => {
+  let bytes = 0;
+  for (const char of value) {
+    const code = char.codePointAt(0)!;
+    if (code >= 0xd800 && code <= 0xdfff) return Infinity;
+    bytes += code <= 0x7f ? 1 : code <= 0x7ff ? 2 : code <= 0xffff ? 3 : 4;
+  }
+  return bytes;
+};
+const loginPassword = z
+  .string()
+  .min(1)
+  .max(128)
+  .refine(
+    (value) => value.length <= 128,
+    'Password must contain at most 128 UTF-16 code units.',
+  )
+  .refine(
+    (value) => utf8Length(value) <= 512,
+    'Password must be valid UTF-8 and at most 512 bytes.',
+  )
+  .describe(
+    'Preserved exactly; 1–128 UTF-16 code units, valid Unicode, and at most 512 UTF-8 bytes. OpenAPI lengths count Unicode code points and do not encode byte limits or invalid-surrogate rejection.',
+  );
+const registrationPassword = loginPassword
+  .refine(
+    (value) => value.length >= 12,
+    'Password must contain at least 12 UTF-16 code units.',
+  )
+  .meta({ minLength: 12 })
+  .describe(
+    'Preserved exactly; 12–128 UTF-16 code units, valid Unicode, and at most 512 UTF-8 bytes. OpenAPI lengths count Unicode code points and do not encode byte limits or invalid-surrogate rejection.',
+  );
+export const registerRequestSchema = z.strictObject({
+  email: authEmail,
+  password: registrationPassword,
+  displayName: authDisplayName,
+});
+export const loginRequestSchema = z.strictObject({
+  email: authEmail,
+  password: loginPassword,
+});
+export const logoutRequestSchema = z.strictObject({});
+export const publicUserSchema = z.strictObject({
+  id: z.uuid(),
+  email: z.email().max(254),
+  displayName: z.string().min(1).max(100),
+});
+export const authResponseSchema = z.strictObject({ user: publicUserSchema });
+export type RegisterRequest = z.infer<typeof registerRequestSchema>;
+export type LoginRequest = z.infer<typeof loginRequestSchema>;
+export type AuthResponse = z.infer<typeof authResponseSchema>;
+// Descriptors are planned A2 routes, not evidence that controllers exist.
+export const authContracts = {
+  register: {
+    method: 'post',
+    path: '/api/v1/auth/register',
+    operationId: 'register',
+    request: registerRequestSchema,
+    response: authResponseSchema,
+    successStatus: 201,
+  },
+  login: {
+    method: 'post',
+    path: '/api/v1/auth/login',
+    operationId: 'login',
+    request: loginRequestSchema,
+    response: authResponseSchema,
+    successStatus: 200,
+  },
+  logout: {
+    method: 'post',
+    path: '/api/v1/auth/logout',
+    operationId: 'logout',
+    request: logoutRequestSchema,
+    successStatus: 204,
+  },
+  me: {
+    method: 'get',
+    path: '/api/v1/me',
+    operationId: 'getCurrentUser',
+    response: authResponseSchema,
+    successStatus: 200,
+  },
+} as const;
+
 // Route metadata is transport-only. Real HTTP tests bind these declarations to Nest.
 export const healthContract = {
   method: 'get',

@@ -148,14 +148,16 @@ test('isolated real PostgreSQL foundation', { timeout: 180000 }, async (t) => {
         const history = await admin.query(
           `SELECT migration_name, finished_at, rolled_back_at FROM "${schema}"._prisma_migrations`,
         );
-        assert.equal(history.rowCount, 1);
-        assert.ok(history.rows[0].finished_at);
-        assert.equal(history.rows[0].rolled_back_at, null);
+        assert.equal(history.rowCount, 2);
+        for (const migration of history.rows) {
+          assert.ok(migration.finished_at);
+          assert.equal(migration.rolled_back_at, null);
+        }
         const checks = await admin.query(
           'SELECT conname FROM pg_constraint WHERE connamespace = $1::regnamespace AND contype = $2',
           [schema, 'c'],
         );
-        assert.equal(checks.rowCount, 4); // SQL checks are not represented by Prisma drift tooling.
+        assert.equal(checks.rowCount, 5); // SQL checks are not represented by Prisma drift tooling.
       },
     );
     const email = `${schema}@example.invalid`;
@@ -200,6 +202,40 @@ test('isolated real PostgreSQL foundation', { timeout: 180000 }, async (t) => {
             displayName: 'Integration fixture',
           },
         });
+        await first.session.create({
+          data: {
+            userId: user.id,
+            tokenHash: 'a'.repeat(64),
+            expiresAt: new Date('2030-01-01'),
+          },
+        });
+        await assert.rejects(
+          first.session.create({
+            data: {
+              userId: user.id,
+              tokenHash: 'a'.repeat(64),
+              expiresAt: new Date('2030-01-01'),
+            },
+          }),
+        );
+        await assert.rejects(
+          first.session.create({
+            data: {
+              userId: randomUUID(),
+              tokenHash: 'b'.repeat(64),
+              expiresAt: new Date('2030-01-01'),
+            },
+          }),
+        );
+        await assert.rejects(
+          first.session.create({
+            data: {
+              userId: user.id,
+              tokenHash: 'Z'.repeat(64),
+              expiresAt: new Date('2030-01-01'),
+            },
+          }),
+        );
         await first.rating.create({
           data: { userId: user.id, tmdbMovieId: 550, score: 8 },
         });
@@ -266,6 +302,7 @@ test('isolated real PostgreSQL foundation', { timeout: 180000 }, async (t) => {
           }),
         );
         await second.user.delete({ where: { id: user.id } });
+        assert.equal(await second.session.count(), 0);
         assert.equal(await second.rating.count(), 0);
         assert.equal(await second.libraryEntry.count(), 0);
         await second.$disconnect();

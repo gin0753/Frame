@@ -12,6 +12,7 @@ const {
   readinessContract,
   apiErrorSchema,
   catalogContracts,
+  authContracts,
 } = require('@frame/contracts');
 
 function generateOpenApi() {
@@ -22,6 +23,14 @@ function generateOpenApi() {
     readinessContract.response,
   );
   const error = registry.register('ApiError', apiErrorSchema);
+  const authUser = registry.register('AuthResponse', authContracts.me.response);
+  registry.registerComponent('securitySchemes', 'SessionCookie', {
+    type: 'apiKey',
+    in: 'cookie',
+    name: 'frame_session',
+    description:
+      'Planned opaque session cookie; endpoints are not implemented in A1.',
+  });
   registry.register('RequestId', apiErrorSchema.shape.error.shape.requestId);
   const cache = {
     'Cache-Control': {
@@ -116,6 +125,77 @@ function generateOpenApi() {
         ),
         500: errorResponse('Unexpected internal failure: INTERNAL_ERROR.'),
       },
+    });
+  }
+  const privateHeaders = {
+    'Cache-Control': {
+      description: 'Private responses must never be cached.',
+      schema: { type: 'string', const: 'private, no-store' },
+    },
+  };
+  const cookieHeader = {
+    description:
+      'Host-only HttpOnly SameSite=Lax cookie, Path=/; Secure in production.',
+    schema: { type: 'string' },
+  };
+  for (const [name, contract] of Object.entries(authContracts)) {
+    const statuses = {
+      register: [400, 403, 409, 429, 503],
+      login: [400, 401, 403, 429, 503],
+      logout: [400, 403, 503],
+      me: [401, 503],
+    }[name];
+    const responses = {};
+    responses[contract.successStatus] = {
+      description:
+        name === 'logout'
+          ? 'Session revoked or absent; delete the cookie.'
+          : 'Public user only; credentials and token digests are never returned.',
+      headers: {
+        ...privateHeaders,
+        ...(name === 'me' ? {} : { 'Set-Cookie': cookieHeader }),
+      },
+      ...(name === 'logout'
+        ? {}
+        : { content: { 'application/json': { schema: authUser } } }),
+    };
+    for (const status of statuses) {
+      const codes = {
+        400: 'VALIDATION_ERROR',
+        401: 'UNAUTHENTICATED',
+        403: 'FORBIDDEN',
+        409: 'CONFLICT',
+        429: 'RATE_LIMITED',
+        503: 'HTTP_ERROR',
+      };
+      responses[status] = {
+        ...errorResponse(`Planned error: ${codes[status]}.`),
+        headers: {
+          ...privateHeaders,
+          'X-Request-Id': {
+            schema: { $ref: '#/components/schemas/RequestId' },
+          },
+        },
+      };
+    }
+    registry.registerPath({
+      method: contract.method,
+      path: contract.path,
+      operationId: contract.operationId,
+      description:
+        'PLANNED: A1 defines this contract only; no authentication endpoint is implemented. Unsafe browser requests require exact Origin and CSRF protection.',
+      ...(name === 'me' ? { security: [{ SessionCookie: [] }] } : {}),
+      ...('request' in contract
+        ? {
+            request: {
+              body: {
+                required: true,
+                content: { 'application/json': { schema: contract.request } },
+              },
+            },
+          }
+        : {}),
+      responses,
     });
   }
   return new OpenApiGeneratorV31(registry.definitions).generateDocument({
