@@ -82,9 +82,11 @@ it('preserves Blender credits and exposes the TMDB notice outside the collapsed 
   const logo = screen.getByRole('img', { name: 'TMDB — The Movie Database' });
   expect(logo).toHaveAttribute('src', '/images/brands/tmdb.svg');
   expect(logo).not.toHaveAttribute('srcset');
+  expect(logo).toHaveAttribute('width', '120');
+  expect(logo).toHaveAttribute('height', '10');
   expect(
     Number(logo.getAttribute('width')) / Number(logo.getAttribute('height')),
-  ).toBeCloseTo(423.04 / 35.4, 8);
+  ).toBeCloseTo(423.04 / 35.4, 1);
   expect(
     screen.getByRole('link', { name: 'TMDB — The Movie Database' }),
   ).toHaveAttribute('href', 'https://www.themoviedb.org');

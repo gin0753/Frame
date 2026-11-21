@@ -32,8 +32,8 @@ export function Footer({
             <Image
               src="/images/brands/tmdb.svg"
               alt="TMDB — The Movie Database"
-              width={42304}
-              height={3540}
+              width={120}
+              height={10}
               className="h-auto w-30"
               unoptimized
             />

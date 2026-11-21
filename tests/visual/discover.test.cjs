@@ -229,6 +229,39 @@ test(
             if (!entry.hadRecentInput) window.__shifts.push(entry.value);
         }).observe({ type: 'layout-shift', buffered: true });
       });
+      if (!['FRAME_STAGE44_ACCESSIBILITY', 'FRAME_STAGE44_PERFORMANCE', 'FRAME_STAGE44_STREAMING']
+        .some((key) => process.env[key] === 'true')) {
+        // Keep the stylesheet pending to test the logo's intrinsic size before CSS.
+        const earlyPage = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+        let releaseStyles;
+        const stylesHeld = new Promise((resolve) => { releaseStyles = resolve; });
+        let heldStyles = 0;
+        await earlyPage.route('**/*.css', async (route) => {
+          heldStyles++;
+          await stylesHeld;
+          await route.continue().catch(() => {});
+        });
+        mode = 'slow';
+        try {
+          await earlyPage.goto(origin + '/discover', { waitUntil: 'commit' });
+          await expect(earlyPage.getByRole('status')).toHaveText('Loading films…');
+          const logo = earlyPage.getByRole('img', { name: 'TMDB — The Movie Database' });
+          await expect(logo).toBeAttached();
+          await expect.poll(() => heldStyles).toBeGreaterThan(0);
+          const initial = await logo.evaluate((image) => ({
+            imageWidth: image.getBoundingClientRect().width,
+            clientWidth: document.documentElement.clientWidth,
+            scrollWidth: document.documentElement.scrollWidth,
+          }));
+          assert.equal(initial.imageWidth, 120);
+          assert.ok(initial.scrollWidth <= initial.clientWidth, JSON.stringify(initial));
+          console.log('Footer before stylesheet:', JSON.stringify(initial));
+        } finally {
+          releaseStyles();
+          await earlyPage.close();
+          mode = 'full';
+        }
+      }
       if (process.env.FRAME_STAGE44_ACCESSIBILITY === 'true') {
         await require('./stage44-streaming.cjs').bounded({
           browser,
@@ -279,6 +312,11 @@ test(
         layouts: [],
       };
       const inspectLayout = async (width, state) => {
+        // Fonts can be ready before the stylesheet has applied the footer width.
+        await expect(page.getByRole('img', { name: 'TMDB — The Movie Database' }))
+          .toHaveCSS('width', '120px');
+        if (state === 'loading')
+          await expect(page.getByRole('status')).toHaveText('Loading films…');
         await page.evaluate(() => document.fonts.ready);
         const layout = await page.evaluate(() => {
           const form = document.querySelector(
